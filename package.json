@@ -1,0 +1,17 @@
+{
+  "name": "automacaocsv",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "console.table": "^0.10.0",
+    "papaparse": "^5.5.1"
+  }
+}
