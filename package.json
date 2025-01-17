@@ -11,8 +11,10 @@
   "description": "",
   "dependencies": {
     "automacaocsv": "file:",
+    "chart.js": "^4.4.7",
     "chokidar": "^4.0.3",
     "console.table": "^0.10.0",
+    "mysql2": "^3.12.0",
     "papaparse": "^5.5.1"
   }
 }
