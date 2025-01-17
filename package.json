@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "automacaocsv": "file:",
     "chokidar": "^4.0.3",
     "console.table": "^0.10.0",
     "papaparse": "^5.5.1"
