@@ -10,7 +10,7 @@ CREATE TABLE identificacao (
     idade INT NOT NULL,
     escolaridade VARCHAR(100) NOT NULL,
     estadoCivil VARCHAR(50) NOT NULL,
-    genero VARCHAR(50) NOT NULL
+    genero VARCHAR(50) NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -22,25 +22,23 @@ const processarCSV = (filePath) => {
         return [];
     }
 
-    console.log("Dados processados: ", resultado.data);
+    //console.log("Dados processados: ", resultado.data);
     return resultado.data;
 };
 
-// Função para verificar registros novos
+// Função para verificar novos registros
 const filtrarNovosRegistros = (dadosCSV, dadosBanco) => {
     
-    // Cria um conjunto de pares de id salvos no banco, para comparar ao csv
-    const idsExistentes = new Set(
-        dadosBanco.map(item => `${item.id}-${item.id_identificacao}`)
+    // Converte os registros do banco em um Set de strings JSON para rápida comparação
+    const registrosBanco = new Set(
+        dadosBanco.map(item => `${item.setor}-${item.cargo}-${item.idade}-${item.escolaridade}-${item.estadoCivil}-${item.genero}`)
     );
 
-    // Filtra os registros do csv 
+    // Filtra os registros do csv que não estão no banco
     return dadosCSV.filter(item => {
-        // Gera um identificador único para cada registro no CSV, com base nos dados relevantes
-        const idProvisorio = `${item.setor}-${item.cargo}-${item.idade}-${item.escolaridade}-${item.estadoCivil}-${item.genero}`;
-        
-        // Verifica se o identificador_CSV está no conjunto de IDs existentes no banco de dados 
-        return !idsExistentes.has(idProvisorio);
+        const registroCSV = `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
+
+        return !registrosBanco.has(registroCSV); // Retorna a negação da comparação, ou seja, os registros diferentes
     });
 };
 
@@ -85,6 +83,8 @@ watcher.on('add', async (filePath) => {
 
 // REVISAR CÓDIGO COM BASE NO PROMPT: Explicação 3 - Duplicidade de registros.
 
+
+
+
 /* 3. Sistematização dos Dados */
 
-// Salvá-los no banco de dados, primeiro.
