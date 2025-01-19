@@ -26,6 +26,9 @@ const processarCSV = (filePath) => {
     return resultado.data;
 };
 
+// Função para criar tabelas no banco de forma dinâmica
+
+
 // Função para verificar novos registros
 const filtrarNovosRegistros = (dadosCSV, dadosBanco) => {
     
@@ -80,11 +83,6 @@ watcher.on('add', async (filePath) => {
     }
 
 });
-
-// REVISAR CÓDIGO COM BASE NO PROMPT: Explicação 3 - Duplicidade de registros.
-
-
-
 
 /* 3. Sistematização dos Dados */
 
