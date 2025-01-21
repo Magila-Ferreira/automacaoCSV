@@ -1,19 +1,39 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 
-const db = mysql.createConnection({
+const createConnection = async (database) => {
+    return await mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: '',
+        database,
+        multipleStatements: true,
+    });
+};
+
+module.exports = { createConnection }; 
+
+/* 
+-- Permissões do usuário root
+PERMISSÕES: TODAS.
+    host: 'localhost',
+    user: 'root',
+    password: ''
+
+-- Permissões do usuário ADM
+PERMISSÕES: SELECT, INSERT, UPDATE, DELETE, ALTER, CREATE, DROP
+    host: 'localhost',
+    user: 'adm',
+    password: 'pgr17012025'
+
+-- Permissões do usuário USER
+PERMISSÕES: SELECT, INSERT, UPDATE, DELETE
     host: 'localhost',
     user: 'user',
-    password: 'pgr2025',
-    database: 'automacao_csv'
-});
+    password: 'pgr2025'
 
-db.connect((err) => {
-    if (err) {
-        console.error('Erro ao conectar ao banco de dados:', err);
-        process.exit(1);
-    } else {
-        console.log('Conexão bd bem sucedida!');
-    }
-});
-
-module.exports = db; 
+-- Permissões do usuário READONLY_USER
+PERMISSÕES: SELECT
+    host: 'localhost',
+    user: 'readonly_user',
+    password: 'pgr'
+*/

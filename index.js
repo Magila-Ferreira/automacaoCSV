@@ -2,11 +2,12 @@
 /* 2. Monitorar pasta e ler arquivo CSV */
 const chokidar = require('chokidar');
 const fs = require('fs');
+const path = require('path');
 const Papa = require('papaparse');
-const { salvarDadosCSV, recuperarDadosDoBanco } = require('./bd/models/csvModel');
+const { criarBancoEDefinirTabelas, salvarDadosCSV } = require('./bd/models/csvModel');
 
-// Caminho da pasta PGR
-const pastaPGR = 'E:/OneDrive/Documentos/arquivosPgr';
+// Pasta monitorada
+const pastaPGR = 'E:\arquivosPgr';
 
 // Função para processar o CSV
 const processarCSV = (filePath) => {
@@ -26,63 +27,34 @@ const processarCSV = (filePath) => {
     return resultado.data;
 };
 
-// Função para criar tabelas no banco de forma dinâmica
-
-
-// Função para verificar novos registros
-const filtrarNovosRegistros = (dadosCSV, dadosBanco) => {
-    
-    // Converte os registros do banco em um Set de strings JSON para rápida comparação
-    const registrosBanco = new Set(
-        dadosBanco.map(item => `${item.setor}-${item.cargo}-${item.idade}-${item.escolaridade}-${item.estadoCivil}-${item.genero}`)
-    );
-
-    // Filtra os registros do csv que não estão no banco
-    return dadosCSV.filter(item => {
-        const registroCSV = `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
-
-        return !registrosBanco.has(registroCSV); // Retorna a negação da comparação, ou seja, os registros diferentes
-    });
-};
-
 // Monitorando a pasta
-const watcher = chokidar.watch(pastaPGR, {persistent: true});
-watcher.on('add', async (filePath) => {
+chokidar.watch(pastaPGR, {persistent: true}).on('add', async (filePath) => {
+    if (!filePath.endsWith('.csv')) return;
+    
     console.log(`Novo arquivo detectado: ${filePath}`);
+    
     const dadosCSV = processarCSV(filePath);
 
     if (dadosCSV.length === 0) {
-        console.error("Nenhum dado válido foi encontrado no csv.");
+        console.error("Nenhum dado válido foi encontrado no arquivo CSV.");
         return;
     }
-    
+
+    const databaseName = path.basename(filePath, '.csv');   // Define nome do banco de dados de acordo com nome csv
+    const identificacaoCols = Object.keys(dadosCSV[0]).slice(0, 6); // Define nome das colunas da tabela 'identificacao'
+    const respostasCols = Object.keys(dadosCSV[0]).slice(6); // Define nome das colunas da tabela 'respostas'
+
     try {
-        // Limpar espaços em branco e aspas dos valores
-        const dadosLinha = {};
-        for (const key in filePath) {
-            dadosLinha[key.trim()] = filePath[key].trim();
-        }
+        // Criar banco e tabelas
+        await criarBancoEDefinirTabelas(databaseName, identificacaoCols, respostasCols);
+        await salvarDadosCSV(dadosCSV, databaseName);
 
-        /* Verifica se há um novo registro no CSV, para salvá-lo no banco */
-            // 1. Recupera os dados salvos no banco
-            const dadosBanco = await recuperarDadosDoBanco();
-
-            // 2. Filtra os registros que ainda não estão no banco
-            const novosRegistros = filtrarNovosRegistros(dadosCSV, dadosBanco);
-            
-            if (novosRegistros.length === 0) {
-                console.log("Nenhum registro novo para salvar no banco.");
-                return;    
-            }
-
-            // 3. Salva no banco os registros diferentes 
-            const mensagem = await salvarDadosCSV(novosRegistros);
-            console.log(mensagem);
-    } catch (err) {
-        console.error("Erro ao salvar os dados no bd: ", err);
+    } catch (error) {
+        console.error("Erro ao processar arquivo CSV: ", error.message);
     }
-
 });
+
+// Erro causado no banco com o id_resposta. Verificar com o chat: Explicação 3
 
 /* 3. Sistematização dos Dados */
 
