@@ -26,7 +26,7 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
         await db.query(create_table_identificacao);
         await db.query(create_table_respostas); 
         
-        console.log(`Banco "${database}" e Tabelas: identificacao e respostas, criadas ou já existentes.`);
+        console.log(`Banco "${database}" e Tabelas "identificacao" e "respostas" criadas ou já existentes.`);
         db.end();
     } catch (error) {
         console.error("Erro ao criar banco ou tabelas: ", error.message);
@@ -52,12 +52,12 @@ const salvarDadosCSV = async (dados, database) => {
             VALUES (?, ?, ?, ?, ?, ?)`;           
 
             const valores_identificacao = [
-                item.setor, 
-                item.cargo, 
-                parseInt(item.idade, 10), 
-                item.escolaridade, 
-                item.estadoCivil, 
-                item.genero];
+                item.setor || null, 
+                item.cargo || null, 
+                item.idade ? parseInt(item.idade, 10) : null, 
+                item.escolaridade || null, 
+                item.estadoCivil || null, 
+                item.genero] || null;
 
             // Verifica se um registro já existe na tabela 'identificacao'    
             const [identificacaoExistente] = await connection.query(select_identificacao, valores_identificacao);
@@ -93,15 +93,41 @@ const salvarDadosCSV = async (dados, database) => {
                 await connection.query(insert_respostas, [id_identificacao, ...respostas]); 
             }
         }
-        console.log("Todos os dados foram salvos com sucesso no bd!");
+        return;
 
-    } catch (error) {
-        console.error("Erro ao salvar os dados no banco: ", error.message);
-        throw error;
+    } catch (err) {
+        console.error("Erro ao salvar os dados no banco: ", err);
+        throw err;
 
     } finally {
         connection.end();
     }
 };
 
-module.exports = { criarBancoEDefinirTabelas, salvarDadosCSV };
+// Recupera os registros do banco
+const recuperarDadosDoBanco = async (database) => {
+    const connection = await createConnection(database);
+
+    try {
+        const select_dados_identificacao = `
+            SELECT setor, cargo, idade, escolaridade, estadoCivil, genero 
+            FROM identificacao`;
+
+        const [rows] = await connection.query(select_dados_identificacao);       
+
+        return rows.map(row => ({
+            setor: row.setor?.trim(),
+            cargo: row.cargo?.trim(),
+            idade: parseInt(row.idade, 10),
+            escolaridade: row.escolaridade?.trim(),
+            estadoCivil: row.estadoCivil?.trim(),
+            genero: row.genero?.trim(),           
+        }));
+
+    } catch (err) {
+        console.error("Erro ao recuperar os dados do banco de dados: ", err);
+        throw err;
+    }
+}
+
+module.exports = { criarBancoEDefinirTabelas, salvarDadosCSV, recuperarDadosDoBanco };
