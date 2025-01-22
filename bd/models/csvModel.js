@@ -36,7 +36,7 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
 }
 
 const salvarDadosCSV = async (dados, database) => {
-    const connection = await createConnection(database);
+    const db = await createConnection(database);
     
     try {
         for (const item of dados) {
@@ -60,7 +60,7 @@ const salvarDadosCSV = async (dados, database) => {
                 item.genero] || null;
 
             // Verifica se um registro já existe na tabela 'identificacao'    
-            const [identificacaoExistente] = await connection.query(select_identificacao, valores_identificacao);
+            const [identificacaoExistente] = await db.query(select_identificacao, valores_identificacao);
 
             let id_identificacao; 
             if (identificacaoExistente.length > 0) {
@@ -69,7 +69,7 @@ const salvarDadosCSV = async (dados, database) => {
             } else {
                 
                 // Insere na tabela 'identificação' caso não exista
-                const [result] = await connection.query(insert_identificacao, valores_identificacao);
+                const [result] = await db.query(insert_identificacao, valores_identificacao);
                 id_identificacao = result.insertId;
             }
             
@@ -86,11 +86,11 @@ const salvarDadosCSV = async (dados, database) => {
             WHERE id_identificacao = ?`;
 
             // Verificar se os dados csv já estão na tabela respostas
-            const [respostasExistentes] = await connection.query(select_respostas, [id_identificacao]);  
+            const [respostasExistentes] = await db.query(select_respostas, [id_identificacao]);  
             
             // Inserir os dados na tabela respostas
             if (respostasExistentes.length === 0) {
-                await connection.query(insert_respostas, [id_identificacao, ...respostas]); 
+                await db.query(insert_respostas, [id_identificacao, ...respostas]); 
             }
         }
         return;
@@ -100,20 +100,20 @@ const salvarDadosCSV = async (dados, database) => {
         throw err;
 
     } finally {
-        connection.end();
+        db.end();
     }
 };
 
 // Recupera os registros do banco
 const recuperarDadosDoBanco = async (database) => {
-    const connection = await createConnection(database);
+    const db = await createConnection(database);
 
     try {
         const select_dados_identificacao = `
             SELECT setor, cargo, idade, escolaridade, estadoCivil, genero 
             FROM identificacao`;
 
-        const [rows] = await connection.query(select_dados_identificacao);       
+        const [rows] = await db.query(select_dados_identificacao);       
 
         return rows.map(row => ({
             setor: row.setor?.trim(),
@@ -127,6 +127,8 @@ const recuperarDadosDoBanco = async (database) => {
     } catch (err) {
         console.error("Erro ao recuperar os dados do banco de dados: ", err);
         throw err;
+    } finally {
+        db.end();
     }
 }
 

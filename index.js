@@ -23,6 +23,24 @@ const filtrarNovosRegistros = (dadosCSV, dadosBanco) => {
     });
 };
 
+// Filtra os dados duplicados [se houver] no próprio CSV, antes de tentar inserir no banco
+const filtrarRegistrosDublicadosCSV = (dadosCSV) => {
+    const registrosUnicos = new Set();
+
+    return dadosCSV.filter(item => {
+
+        // Armazena uma linha do CSV
+        const registro = `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
+
+        if (registrosUnicos.has(registro)) {
+            return false; // Ignora registro duplicado
+        }
+
+        registrosUnicos.add(registro); // Insere o registro em registrosUnicos
+        return true;
+    });
+};
+
 // Função para processar o CSV
 const processarCSV = (filePath) => {
     const conteudo = fs.readFileSync(filePath, 'utf-8');
@@ -56,9 +74,12 @@ chokidar.watch(pastaPGR, {persistent: true}).on('add', async (filePath) => {
         return;
     }
 
+    // Remover registros duplicados no próprio CSV
+    const dadosUnicosCSV = filtrarRegistrosDublicadosCSV(dadosCSV);
+
     const databaseName = path.basename(filePath, '.csv');   // Define nome do banco de dados de acordo com nome csv
-    const identificacaoCols = Object.keys(dadosCSV[0]).slice(0, 6); // Define nome das colunas da tabela 'identificacao'
-    const respostasCols = Object.keys(dadosCSV[0]).slice(6); // Define nome das colunas da tabela 'respostas'
+    const identificacaoCols = Object.keys(dadosUnicosCSV[0]).slice(0, 6); // Define nome das colunas da tabela 'identificacao'
+    const respostasCols = Object.keys(dadosUnicosCSV[0]).slice(6); // Define nome das colunas da tabela 'respostas'
     
     try {
         // Criar banco e tabelas
@@ -69,7 +90,7 @@ chokidar.watch(pastaPGR, {persistent: true}).on('add', async (filePath) => {
             const dadosBanco = await recuperarDadosDoBanco(databaseName);
                                     
             // 2. Verifica se algum dos registro csv é diferente dos registros salvos no banco 
-            const novosRegistros = filtrarNovosRegistros(dadosCSV, dadosBanco);
+            const novosRegistros = filtrarNovosRegistros(dadosUnicosCSV, dadosBanco);
             
             // 3. Salva no banco os registros diferentes
             if (novosRegistros.length === 0) {
