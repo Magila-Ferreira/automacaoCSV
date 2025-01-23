@@ -1,0 +1,24 @@
+// TRATATIVAS CONFIGURADAS:
+
+1. A aplicação identifica os registros através dos campos: setor, cargo, idade, escolaridade, estadoCivil, gênero
+---------------> Será necessário trocar essa informação pelo id do colaborador 
+
+2. Espera-se que cada registro (csv ou xlsx) identifique um colaborador distrinto
+
+3. Cada arquivo (csv ou xlsx) identifica uma empresa diferente
+
+4. Cada arquivo gerará um banco de dados distinto, específico para a empresa 
+
+5. Espera-se que todos os campos (colunas) do arquivo (csv ou xlsx) estejam preenchidos, porém, em caso contrário, a aplicação fará a seguinte tratativa:
+
+    ----->    TRATATIVAS PARA A TABELA: identificacao
+
+    1. As colunas setor, cargo, escolaridade, estadoCivil e gênero, que tiverem campos vazios no arquivo (csv ou xlsx) serão salvos no banco como: NAO INFORMADO
+
+    2. A coluna idade, se estiver algum campo vazio no arquivo (csv ou xlsx), será salvo no banco com o valor: 0     
+
+    ----->    TRATATIVAS PARA A TABELA: respostas
+
+    Por se tratar de campos com valores AUTO_INCREMENT ou COM VALORES FIXOS (caixa de seleção), não há necessidade de tratativas para campos em branco. 
+
+6. As perguntas relacionadas as respostas salvas no banco serão armazenadas em um array, denominado: questoes[];

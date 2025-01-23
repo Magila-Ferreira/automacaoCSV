@@ -7,35 +7,53 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
     try {
         // SQL
         const create_database = `CREATE DATABASE IF NOT EXISTS \`${database}\`
-            CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;
-        const create_table_identificacao = `CREATE TABLE IF NOT EXISTS 
-            identificacao (id INT AUTO_INCREMENT PRIMARY KEY,
-            ${identificacaoCols.map((col) => `\`${col}\` TEXT`).join(', ')});`;
-        const create_table_respostas = `CREATE TABLE IF NOT EXISTS 
-            respostas (id INT AUTO_INCREMENT PRIMARY KEY, id_identificacao INT, 
-            ${respostasCols.map((col) => `\`${col}\` TEXT`).join(', ')}, 
-            FOREIGN KEY (id_identificacao) REFERENCES identificacao(id));`;
+            CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;        
 
         // Criar banco de dados
         await connection.query(create_database);
+        connection.end();
 
         // Reutilizar a conexão para o banco criado
         const db = await createConnection(database);
-        
+
+        // SQL
+        const create_table_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ${identificacaoCols.map((col) => {
+                // Define o tipo de dados e atributos para cada coluna
+                switch (col) {
+                    case 'setor':
+                    case 'cargo':
+                    case 'escolaridade':
+                    case 'estadoCivil':
+                    case 'genero':
+                        return `\`${col}\` VARCHAR(100) NOT NULL`;
+                    case 'idade':
+                        return `\`${col}\` INT NOT NULL`;
+                    
+                    default:
+                        return `\`${col}\` TEXT NOT NULL`; // Define o tipo de dados padrão    
+                }
+            }).join(', ')},
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`;
+
+        const create_table_respostas = `CREATE TABLE IF NOT EXISTS respostas (
+            id INT AUTO_INCREMENT PRIMARY KEY, id_identificacao INT NOT NULL, 
+            ${respostasCols.map((col) => `\`${col}\` VARCHAR(20) NOT NULL`).join(', ')}, 
+            FOREIGN KEY (id_identificacao) REFERENCES identificacao(id));`;
+
         // Criar tabelas `identificacao` e `respostas`
         await db.query(create_table_identificacao);
         await db.query(create_table_respostas); 
         
-        console.log(`Banco "${database}" e Tabelas "identificacao" e "respostas" criadas ou já existentes.`);
+        console.log(`\n Banco "${database}" e Tabelas criadas.`);
         db.end();
     } catch (error) {
-        console.error("Erro ao criar banco ou tabelas: ", error.message);
-    } finally {
-        connection.end();
-    }
+        console.error("\n Erro ao criar banco ou tabelas: ", error.message);
+    } 
 }
 
-const salvarDadosCSV = async (dados, database) => {
+const salvarDados = async (dados, database) => {
     const db = await createConnection(database);
     
     try {
@@ -44,7 +62,7 @@ const salvarDadosCSV = async (dados, database) => {
             // SQL --> IDENTIFICACAO 
             const select_identificacao = `
             SELECT id FROM identificacao
-            WHERE setor = ? AND idade = ? AND escolaridade = ? AND estadoCivil = ? AND genero = ?`;
+            WHERE setor = ? AND cargo = ? AND idade = ? AND escolaridade = ? AND estadoCivil = ? AND genero = ?`;
 
             const insert_identificacao = `
             INSERT INTO identificacao 
@@ -52,12 +70,12 @@ const salvarDadosCSV = async (dados, database) => {
             VALUES (?, ?, ?, ?, ?, ?)`;           
 
             const valores_identificacao = [
-                item.setor || null, 
-                item.cargo || null, 
-                item.idade ? parseInt(item.idade, 10) : null, 
-                item.escolaridade || null, 
-                item.estadoCivil || null, 
-                item.genero] || null;
+                item.setor,
+                item.cargo, 
+                parseInt(item.idade, 10), 
+                item.escolaridade, 
+                item.estadoCivil, 
+                item.genero];
 
             // Verifica se um registro já existe na tabela 'identificacao'    
             const [identificacaoExistente] = await db.query(select_identificacao, valores_identificacao);
@@ -73,8 +91,8 @@ const salvarDadosCSV = async (dados, database) => {
                 id_identificacao = result.insertId;
             }
             
-            const colunasRespostas = Object.keys(item).slice(6); // Obter o nome das colunas csv para a tabela respostas
-            const respostas = Object.keys(item).filter((key, index) => index >= 6).map((key) => item[key]); // Obter os dados csv para a tabela 'respostas'
+            const colunasRespostas = Object.keys(item).slice(6); // Obter o nome das colunas do arquivo para a tabela respostas
+            const respostas = Object.keys(item).filter((key, index) => index >= 6).map((key) => item[key]); // Obter os dados do arquivo para a tabela 'respostas'
                         
             // SQL --> RESPOSTAS
             const insert_respostas = `
@@ -85,7 +103,7 @@ const salvarDadosCSV = async (dados, database) => {
             SELECT id FROM respostas
             WHERE id_identificacao = ?`;
 
-            // Verificar se os dados csv já estão na tabela respostas
+            // Verificar se os dados do arquivo já estão na tabela respostas
             const [respostasExistentes] = await db.query(select_respostas, [id_identificacao]);  
             
             // Inserir os dados na tabela respostas
@@ -96,7 +114,7 @@ const salvarDadosCSV = async (dados, database) => {
         return;
 
     } catch (err) {
-        console.error("Erro ao salvar os dados no banco: ", err);
+        console.error(`\n Erro ao salvar os dados no banco: ${database}`, err);
         throw err;
 
     } finally {
@@ -115,6 +133,11 @@ const recuperarDadosDoBanco = async (database) => {
 
         const [rows] = await db.query(select_dados_identificacao);       
 
+        if (!rows || rows.length === 0) {
+            console.warn("\n Banco de dados VAZIO!");
+            return [];
+        }
+        
         return rows.map(row => ({
             setor: row.setor?.trim(),
             cargo: row.cargo?.trim(),
@@ -125,11 +148,11 @@ const recuperarDadosDoBanco = async (database) => {
         }));
 
     } catch (err) {
-        console.error("Erro ao recuperar os dados do banco de dados: ", err);
+        console.error("\n Erro ao recuperar os dados do banco: ", err);
         throw err;
     } finally {
         db.end();
     }
 }
 
-module.exports = { criarBancoEDefinirTabelas, salvarDadosCSV, recuperarDadosDoBanco };
+module.exports = { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco };
