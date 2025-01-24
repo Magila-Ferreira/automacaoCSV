@@ -166,4 +166,7 @@ chokidar.watch(pastaPGR, {persistent: true}).on('add', async (filePath) => {
     }
 });
 
+/* Verificar possíveis inconsistências no código */
+// Atualização dos dados no banco?
+
 /* 3. Sistematização dos Dados */
