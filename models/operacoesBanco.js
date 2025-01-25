@@ -1,5 +1,6 @@
-//const { resolve } = require('chart.js/helpers');
-const { createConnection } = require('../config/db');
+/* 5. Operações com o banco de dados */
+
+const { createConnection } = require('../config/configBanco');
 
 const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasCols) => {
     const connection = await createConnection(null);
