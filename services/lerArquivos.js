@@ -50,6 +50,7 @@ const processarArquivo = (filePath) => {
 
     } else {
         console.error("\n Formato de arquivo inválido.");
+        return [];
     };
 };
 
@@ -71,7 +72,6 @@ const tratarCamposVazios = (item) => {
             item[key] = item[key] || valorPadrao.default;
         }
     });
-
     return item;
 };
 
@@ -107,4 +107,9 @@ const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
     });
 };
 
-module.exports = {  processarArquivo, tratarCamposVazios, filtrarRegistrosDublicados, filtrarRegistrosNovos };
+module.exports = {  
+    processarArquivo, 
+    tratarCamposVazios, 
+    filtrarRegistrosDublicados, 
+    filtrarRegistrosNovos 
+};

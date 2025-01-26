@@ -1,9 +1,10 @@
 /* 5. Operações com o banco de dados */
 
-const { createConnection } = require('../config/configBanco');
+const { gerenciadorDeConexoesBD } = require('../config/configBanco');
 
 const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasCols) => {
-    const connection = await createConnection(null);
+    const usuario = 'root'; // Usuário com permissões para criar banco e tabelas
+    const conexoes = gerenciadorDeConexoesBD(null, usuario);
 
     try {
         // SQL
@@ -11,11 +12,10 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
             CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;        
 
         // Criar banco de dados
-        await connection.query(create_database);
-        connection.end();
-
+        await conexoes.query(create_database);
+        
         // Reutilizar a conexão para o banco criado
-        const db = await createConnection(database);
+        const db = gerenciadorDeConexoesBD(database);
 
         // SQL
         const create_table_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
@@ -46,30 +46,31 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
         // Criar tabelas `identificacao` e `respostas`
         await db.query(create_table_identificacao);
         await db.query(create_table_respostas); 
-        
-        console.log(`\n Banco "${database}" e Tabelas criadas.`);
         db.end();
+
+        console.log(`\n Banco "${database}" e Tabelas criadas.`);
     } catch (error) {
         console.error("\n Erro ao criar banco ou tabelas: ", error.message);
-    } 
+    } finally {
+        conexoes.end();
+    }
 }
 
 const salvarDados = async (dados, database) => {
-    const db = await createConnection(database);
+    const usuario = 'root'; // Usuário com permissões para inserir dados
+    const db = gerenciadorDeConexoesBD(database, usuario);
     
     try {
-        for (const item of dados) {
+        // SQL --> IDENTIFICACAO e RESPOSTAS
+        const insert_identificacao = `
+        INSERT IGNORE INTO identificacao 
+        (setor, cargo, idade, escolaridade, estadoCivil, genero) 
+        VALUES (?, ?, ?, ?, ?, ?)`;
 
-            // SQL --> IDENTIFICACAO 
-            const select_identificacao = `
-            SELECT id FROM identificacao
-            WHERE setor = ? AND cargo = ? AND idade = ? AND escolaridade = ? AND estadoCivil = ? AND genero = ?`;
+        const insert_respostas = (colunas) => `INSERT IGNORE INTO respostas 
+        (id_identificacao, ${colunas.join(', ')}) VALUES (?, ${colunas.map(() => '?').join(', ')})`;
 
-            const insert_identificacao = `
-            INSERT INTO identificacao 
-            (setor, cargo, idade, escolaridade, estadoCivil, genero) 
-            VALUES (?, ?, ?, ?, ?, ?)`;           
-
+        for (const item of dados) {                     
             const valores_identificacao = [
                 item.setor,
                 item.cargo, 
@@ -77,47 +78,20 @@ const salvarDados = async (dados, database) => {
                 item.escolaridade, 
                 item.estadoCivil, 
                 item.genero];
-
-            // Verifica se um registro já existe na tabela 'identificacao'    
-            const [identificacaoExistente] = await db.query(select_identificacao, valores_identificacao);
-
-            let id_identificacao; 
-            if (identificacaoExistente.length > 0) {
-                id_identificacao = identificacaoExistente[0].id;
-
-            } else {
                 
                 // Insere na tabela 'identificação' caso não exista
                 const [result] = await db.query(insert_identificacao, valores_identificacao);
-                id_identificacao = result.insertId;
-            }
-            
-            const colunasRespostas = Object.keys(item).slice(6); // Obter o nome das colunas do arquivo para a tabela respostas
-            const respostas = Object.keys(item).filter((key, index) => index >= 6).map((key) => item[key]); // Obter os dados do arquivo para a tabela 'respostas'
-                        
-            // SQL --> RESPOSTAS
-            const insert_respostas = `
-            INSERT INTO respostas 
-            (id_identificacao, ${colunasRespostas.join(', ')}) VALUES (?, ${colunasRespostas.map(() => '?').join(', ')})`;
+                const id_identificacao = result.insertId;
 
-            const select_respostas = `
-            SELECT id FROM respostas
-            WHERE id_identificacao = ?`;
-
-            // Verificar se os dados do arquivo já estão na tabela respostas
-            const [respostasExistentes] = await db.query(select_respostas, [id_identificacao]);  
-            
-            // Inserir os dados na tabela respostas
-            if (respostasExistentes.length === 0) {
-                await db.query(insert_respostas, [id_identificacao, ...respostas]); 
-            }
+            // VERIFICAÇÃO ADICIONAL:
+            if (id_identificacao) {
+                const colunasRespostas = Object.keys(item).slice(6); // Obter o nome das colunas do arquivo para a tabela respostas
+                const valores_respostas = Object.values(item).slice(6); // Obter os valores do arquivo para a tabela respostas
+                await db.query(insert_respostas(colunasRespostas), [id_identificacao, ...valores_respostas]); 
+            } 
         }
-        return;
-
-    } catch (err) {
-        console.error(`\n Erro ao salvar os dados no banco: ${database}`, err);
-        throw err;
-
+    } catch (error) {
+        console.error(`\n Erro ao salvar dados. Banco: ${database}, Erro: ${error.message}`);
     } finally {
         db.end();
     }
@@ -125,7 +99,7 @@ const salvarDados = async (dados, database) => {
 
 // Recupera os registros do banco
 const recuperarDadosDoBanco = async (database) => {
-    const db = await createConnection(database);
+    const db = await gerenciadorDeConexoesBD(database);
 
     try {
         const select_dados_identificacao = `
@@ -147,13 +121,11 @@ const recuperarDadosDoBanco = async (database) => {
             estadoCivil: row.estadoCivil?.trim(),
             genero: row.genero?.trim(),           
         }));
-
-    } catch (err) {
-        console.error("\n Erro ao recuperar os dados do banco: ", err);
-        throw err;
+    } catch (error) {
+        console.error(`\n Erro ao recuperar dados: ${error.message}`);
+        return [];
     } finally {
         db.end();
     }
 }
-
 module.exports = { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco };
