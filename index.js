@@ -3,7 +3,7 @@
 //const { resolve } = require('chart.js/helpers');
 
 // Início do programa
-const { inicializarPrograma } = require('./watchers/monitorarPasta');
+const { inicializarPrograma } = require('./monitoramento/monitorarPasta');
 
 (async () => {
     try {
@@ -14,12 +14,6 @@ const { inicializarPrograma } = require('./watchers/monitorarPasta');
         console.error("Erro ao iniciar o programa: ", error);
     }
 })();
-
-/* CONTINUAR REVISÃO DO CÓDIGO: 
-
-    Em: operacoesBanco --> salvarDados
-    Depois: configBanco
-*/
 
 // Implementar: atualização dos dados no banco:
 

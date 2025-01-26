@@ -58,22 +58,21 @@ const inicializarPrograma = async () => {
                 const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco);
                 
                 // 3. Retorna se não houver registros novos
-                if (novosRegistros.length === 0) {
-                    console.log(`\n Sem novos registros para salvar. ${databaseName}`);
-                    return; 
-                } 
+                if (novosRegistros.length > 0) {
 
                 // 4. Salvando os novos registros
                 for (const registro of novosRegistros) {
                     await salvarDados([registro], databaseName);
                 }
                 
-                console.log(`\n Dados salvos com sucesso: ${databaseName}`);
+                return console.log(`\n Dados salvos com sucesso: ${databaseName}`); 
+            } 
+        console.log(`\n Sem novos registros para salvar. ${databaseName}`);
+        return;    
 
         } catch (err) {
             console.error("\n Erro ao processar arquivos: ", err);
         }
     });
 };
-
 module.exports = { inicializarPrograma };
