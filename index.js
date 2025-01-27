@@ -15,8 +15,6 @@ const { inicializarPrograma } = require('./monitoramento/monitorarPasta');
     }
 })();
 
-// Implementar: atualização dos dados no banco:
-
 /* O programa precisa verificar se os dados do banco possui consistência em relação ao dados do arquivo, toda vez que um novo arquivo for encontrado na pasta */
 
 /* 3. Sistematização dos Dados */
