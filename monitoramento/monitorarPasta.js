@@ -7,20 +7,24 @@ const {
     tratarCamposVazios, 
     filtrarRegistrosNovos, 
     filtrarRegistrosDublicados 
-} = require('../services/lerArquivos');
+} = require('../servicos/lerArquivos');
 
 const { 
     criarBancoEDefinirTabelas, 
     salvarDados, 
-    recuperarDadosDoBanco 
-} = require('../models/operacoesBanco');
+    recuperarDadosDoBanco,
+    selecionarDadosPDF 
+} = require('../modelo/operacoesBanco');
 
-// Pasta monitorada
-const pastaPGR = 'E:/arquivosPgr';
+const { gerarPDF } = require('../servicos/gerarPDF');
+
+// Caminho das pastas do PC
+const pastaEntrada = 'E:/arquivosPgr/excel_csv';
+const pastaSaida = 'E:/arquivosPgr/pdf';
 
 // Monitorando a pasta
 const inicializarPrograma = async () => { 
-    chokidar.watch(pastaPGR, {persistent: true}).on('add', async (filePath) => {
+    chokidar.watch(pastaEntrada, {persistent: true}).on('add', async (filePath) => {
         if (path.basename(filePath).startsWith('~$')) return; // Ignora arquivos temporários do Excel
 
         // Verifica se há algum arquivo csv ou xlsx na pasta
@@ -58,18 +62,37 @@ const inicializarPrograma = async () => {
                 const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco);
                 
                 // 3. Retorna se não houver registros novos
-                if (novosRegistros.length > 0) {
+            if (novosRegistros.length > 0) {
 
                 // 4. Salvando os novos registros
                 for (const registro of novosRegistros) {
                     await salvarDados([registro], databaseName);
                 }
-                
-                return console.log(`\n Dados salvos com sucesso: ${databaseName}`); 
-            } 
-        console.log(`\n Sem novos registros para salvar. ${databaseName}`);
-        return;    
+                console.log(`\n Dados salvos com sucesso: ${databaseName}`); 
 
+                // 5. Selecionar os dados para gerar PDF
+                const dadosPDF = await selecionarDadosPDF(databaseName, respostasCols);
+                
+                if (dadosPDF.length === 0) {
+                    console.warn("\n Nenhum dado para gerar PDF.");
+                    return;
+                }
+                console.log("\n Dados PDF selecionados com sucesso!");
+                
+                // 6. Gerar arquivo PDF
+                const pdf = await gerarPDF(dadosPDF, pastaSaida, databaseName);
+                console.log("\n PDF salvo com sucesso: ", pdf);
+                
+                return;
+            } 
+            console.log(`\n Sem novos registros para salvar no Banco: ${databaseName}`);
+            
+            // 7. Disponibilizar PDF com os dados atuais do banco
+            const dadosPDF = await selecionarDadosPDF(databaseName, respostasCols);
+            const pdf = await gerarPDF(dadosPDF, pastaSaida, databaseName);
+            console.log("\n PDF gerado com sucesso: ", pdf);
+            
+            return;    
         } catch (err) {
             console.error("\n Erro ao processar arquivos: ", err);
         }

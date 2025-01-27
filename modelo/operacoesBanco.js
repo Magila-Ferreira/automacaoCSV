@@ -1,6 +1,6 @@
 /* 5. Operações com o banco de dados */
 
-const { gerenciadorDeConexoesBD } = require('../config/configBanco');
+const { gerenciadorDeConexoesBD } = require('../configuracoes/configBanco');
 const usuario = 'root'; // Usuário com permissões para criar banco e tabelas
 
 const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasCols) => {
@@ -97,7 +97,7 @@ const salvarDados = async (dados, database) => {
 
 // Recupera os registros do banco
 const recuperarDadosDoBanco = async (database) => {
-    const db = await gerenciadorDeConexoesBD(database);
+    const db = gerenciadorDeConexoesBD(database);
 
     try {
         const select_dados_identificacao = `
@@ -126,4 +126,50 @@ const recuperarDadosDoBanco = async (database) => {
         db.end();
     }
 }
-module.exports = { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco };
+
+// Seleciona os dados do banco para salvar no PDF
+const selecionarDadosPDF = async (database, nomeDasColunasNaTabelaRespostas) => {
+    const db = gerenciadorDeConexoesBD(database);
+
+    try {
+        if (nomeDasColunasNaTabelaRespostas.length === 0) {
+            console.warn("\n Colunas não encontradas na tabela 'respostas'!");
+            return [];
+        }
+
+        // SQL com colunas dinâmicas para a tabela respostas  
+        const select_dados_pdf = `
+            SELECT i.setor, i.cargo, i.idade, i.escolaridade, i.estadoCivil, i.genero, r.id 
+                AS id_resposta, ${nomeDasColunasNaTabelaRespostas.map((coluna) => `r.${coluna}`).join(', ')} 
+            FROM identificacao i
+            LEFT JOIN respostas r ON i.id = r.id_identificacao`;
+
+        const [rows] = await db.query(select_dados_pdf);       
+
+        if (!rows || rows.length === 0) {
+            console.warn("\n Não há dados para gerar o PDF!");
+            return [];
+        }
+
+        // Inclusão dinâmica dos resultados
+        return rows.map(row => ({
+            setor: row.setor,
+            cargo: row.cargo,
+            idade: parseInt(row.idade, 10),
+            escolaridade: row.escolaridade,
+            estadoCivil: row.estadoCivil,
+            genero: row.genero,
+            respostas: nomeDasColunasNaTabelaRespostas.reduce((colDinamicas, coluna) => {
+                colDinamicas[coluna] = row[coluna];
+                return colDinamicas;
+            }, {})
+    }));
+
+    } catch (error) {
+        console.error(`\n Erro no SELECT dos dados para gerar o PDF: ${error.message}`);
+        return [];
+    } finally {
+        db.end();
+    }
+}
+module.exports = { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco, selecionarDadosPDF };
