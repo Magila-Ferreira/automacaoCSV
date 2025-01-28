@@ -48,9 +48,8 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
         await db.query(create_table_respostas); 
         db.end();
 
-        console.log(`\n Banco "${database}" e Tabelas criadas.`);
     } catch (error) {
-        console.error("\n Erro ao criar banco ou tabelas: ", error.message);
+        console.error("Erro ao criar banco e/ou tabelas: ", error.message);
     } finally {
         conexoes.end();
     }
@@ -89,7 +88,7 @@ const salvarDados = async (dados, database) => {
             } 
         }
     } catch (error) {
-        console.error(`\n Erro ao salvar dados. Banco: ${database}, Erro: ${error.message}`);
+        console.error(`Erro ao salvar dados. Banco: ${database}. Erro: ${error.message}`);
     } finally {
         db.end();
     }
@@ -107,7 +106,6 @@ const recuperarDadosDoBanco = async (database) => {
         const [rows] = await db.query(select_dados_identificacao);       
 
         if (!rows || rows.length === 0) {
-            console.warn("\n Banco de dados VAZIO!");
             return [];
         }
         
@@ -120,7 +118,7 @@ const recuperarDadosDoBanco = async (database) => {
             genero: row.genero?.trim(),           
         }));
     } catch (error) {
-        console.error(`\n Erro ao recuperar dados: ${error.message}`);
+        console.error(`Erro ao recuperar dados: ${error.message}`);
         return [];
     } finally {
         db.end();
@@ -133,7 +131,7 @@ const selecionarDadosPDF = async (database, nomeDasColunasNaTabelaRespostas) => 
 
     try {
         if (nomeDasColunasNaTabelaRespostas.length === 0) {
-            console.warn("\n Colunas não encontradas na tabela 'respostas'!");
+            console.warn("Colunas não encontradas na tabela 'respostas'!");
             return [];
         }
 
@@ -147,7 +145,7 @@ const selecionarDadosPDF = async (database, nomeDasColunasNaTabelaRespostas) => 
         const [rows] = await db.query(select_dados_pdf);       
 
         if (!rows || rows.length === 0) {
-            console.warn("\n Não há dados para gerar o PDF!");
+            console.warn("Não há dados para gerar o PDF!");
             return [];
         }
 
@@ -166,7 +164,7 @@ const selecionarDadosPDF = async (database, nomeDasColunasNaTabelaRespostas) => 
     }));
 
     } catch (error) {
-        console.error(`\n Erro no SELECT dos dados para gerar o PDF: ${error.message}`);
+        console.error(`Erro ao selecionar dados para gerar PDF: ${error.message}`);
         return [];
     } finally {
         db.end();

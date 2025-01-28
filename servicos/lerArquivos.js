@@ -16,11 +16,9 @@ const processarArquivo = (filePath) => {
         });
 
         if (resultado.errors.length > 0) {
-            console.error("\n Erro na leitura do CSV: ", resultado.errors);
+            console.error("Erro na leitura do CSV: ", resultado.errors);
             return [];
         }
-
-        console.log("\n Arquivo CSV lido com sucesso!");
         return resultado.data;
 
     // Leitura de arquivos Excel 
@@ -28,7 +26,7 @@ const processarArquivo = (filePath) => {
         const conteudoExcel = xlsx.parse(filePath);
 
         if (conteudoExcel.length === 0 || conteudoExcel[0].data.length === 0) {
-            console.error("\n Arquivo XLSX está VAZIO.");
+            console.error(`Arquivo VAZIO:    ${filePath}.`);
             return [];
         }
 
@@ -45,11 +43,10 @@ const processarArquivo = (filePath) => {
             return objetoDados; 
         });
 
-        console.log("\n Arquivo XLSX lido com sucesso!");
         return dados; 
 
     } else {
-        console.error("\n Formato de arquivo inválido.");
+        console.error("Formato de arquivo inválido!");
         return [];
     };
 };

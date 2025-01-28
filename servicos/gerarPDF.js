@@ -44,7 +44,7 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
     return caminhoArquivoPDF;
 
     }  catch (error) {        
-        console.error(`\n Erro ao gerar PDF: ${error.message}`);
+        console.error(`Erro ao gerar PDF: ${error.message}`);
         throw error;
     }
 };

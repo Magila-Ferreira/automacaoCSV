@@ -19,7 +19,7 @@ const isArquivoValido = (filePath) => {
 const processarArquivoEntrada = async (filePath) => {
     const dadosArquivo = processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto 
     if (dadosArquivo.length === 0) {
-        throw new Error("Arquivo sem dados!");
+        throw new Error(`Arquivo VAZIO:     ${filePath}`);
     }
 
     const dadosUnicos = filtrarRegistrosDublicados(dadosArquivo); // Desconsidera os registros duplicados no arquivo
@@ -35,9 +35,8 @@ const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacao
 
     if (novosRegistros.length > 0) {
         await salvarDados(novosRegistros, databaseName); // 3. Salvando os novos registros
-        console.log(`Dados salvos com sucesso no banco: ${databaseName}`);
     } else {
-        console.log(`\n Sem novos registros para salvar no banco: ${databaseName}`);
+        console.log(`Sem novos registros para salvar no banco: ${databaseName}`);
     }
 
     return novosRegistros.length > 0;
@@ -46,7 +45,7 @@ const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacao
 const gerarEDisponibilizarPDF = async (databaseName, respostasCols) => {
     const dadosPDF = await selecionarDadosPDF(databaseName, respostasCols); // 4. Selecionar os dados para gerar PDF
     if (dadosPDF.length === 0) {
-        console.warn("\n Nenhum dado disponível para gerar PDF.");
+        console.warn(`Nenhum dado disponível para gerar PDF. ARQUIVO: ${databaseName}`);
         return;
     }
 
@@ -58,7 +57,6 @@ const inicializarPrograma = () => {
     chokidar.watch(pastaEntrada, { persistent: true }).on('add', async (filePath) => {
         try {
             if (!isArquivoValido(filePath)) return;
-            console.log(`\n Arquivo detectado: ${filePath}`);
 
             const dadosTratados = await processarArquivoEntrada(filePath);
             const databaseName = path.basename(filePath, path.extname(filePath)); // Define o nome do banco, conforme nome do arquivo sem extensão
@@ -72,7 +70,7 @@ const inicializarPrograma = () => {
             await gerarEDisponibilizarPDF(databaseName, respostasCols);
 
         } catch (err) {
-            console.error("\n Erro ao processar arquivo:", err.message);
+            console.error("Impossível salvar os dados do arquivo no banco.", err.message);
         }
     });
 };

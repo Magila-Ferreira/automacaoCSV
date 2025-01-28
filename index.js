@@ -7,8 +7,7 @@ const { inicializarPrograma } = require('./monitoramento/monitorarPasta');
 
 (async () => {
     try {
-        await inicializarPrograma();
-        console.log('\n Programa inicializado com sucesso!');
+        inicializarPrograma();
     }
     catch (error) {
         console.error("Erro ao iniciar o programa: ", error);
