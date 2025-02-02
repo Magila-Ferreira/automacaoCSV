@@ -1,4 +1,3 @@
-/* 3. Ler arquivos csv ou xlxs */
 const fs = require('fs');
 const Papa = require('papaparse');
 const xlsx = require('node-xlsx');

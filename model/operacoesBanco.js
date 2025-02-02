@@ -1,6 +1,4 @@
-/* 5. Operações com o banco de dados */
-
-const { gerenciadorDeConexoesBD } = require('../configuracoes/configBanco');
+const { gerenciadorDeConexoesBD } = require('../config/configBanco');
 const usuario = 'root'; // Usuário com permissões para criar banco e tabelas
 
 const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasCols) => {

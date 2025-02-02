@@ -1,12 +1,13 @@
 const chokidar = require('chokidar');
 const path = require('path');
 
-const { processarArquivo, tratarCamposVazios, filtrarRegistrosNovos, filtrarRegistrosDublicados } = require('../servicos/lerArquivos');
-const { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco,selecionarDadosPDF } = require('../modelo/operacoesBanco');
-const { gerarPDF } = require('../servicos/gerarPDF');
+const { processarArquivo, tratarCamposVazios, filtrarRegistrosNovos, filtrarRegistrosDublicados } = require('./lerArquivos');
+const { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco,selecionarDadosPDF } = require('../model/operacoesBanco');
+const { gerarPDF } = require('./gerarPDF');
 
-const pastaEntrada = 'E:/arquivosPgr/excel_csv';
-const pastaSaida = 'E:/arquivosPgr/pdf';
+// Definição de caminhos relativos ao projeto
+const pastaEntrada = path.resolve(__dirname, '..', '..', 'arquivosPgr', 'excel_csv');
+const pastaSaida = path.resolve(__dirname, '..', '..', 'arquivosPgr', 'pdf');
 
 // Verifica se o arquivo é válido:
 const isArquivoValido = (filePath) => {
@@ -74,5 +75,4 @@ const inicializarPrograma = () => {
         }
     });
 };
-
 module.exports = { inicializarPrograma };

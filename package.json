@@ -1,26 +1,34 @@
 {
-  "name": "automacaocsv",
+  "name": "automacao",
   "version": "1.0.0",
   "main": "index.js",
+  "bin": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "author": "MMSF",
+  "license": "MIT",
+  "description": "Processamento de arquivos Excel",
   "dependencies": {
-    "automacaocsv": "file:",
+    "automacao": "file:",
+    "brotli": "^1.3.3",
     "chart.js": "^4.4.7",
     "chokidar": "^4.0.3",
     "console.table": "^0.10.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "fs-extra": "^11.3.0",
     "glob": "^11.0.1",
     "mysql2": "^3.12.0",
     "node-xlsx": "^0.24.0",
-    "papaparse": "^5.5.1",
+    "papaparse": "^5.5.2",
     "pdfkit": "^0.16.0",
     "rimraf": "^6.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   }
 }
