@@ -1,13 +1,10 @@
-const chokidar = require('chokidar');
-const path = require('path');
+import chokidar from 'chokidar';
+import path from 'path';
+import { processarArquivoEntrada } from './lerArquivos.js';
+import { salvarRegistrosNoBanco } from '../model/operacoesBanco.js';
+import { disponibilizarPDF } from './disponibilizarPDF.js';
 
-const { processarArquivo, tratarCamposVazios, filtrarRegistrosNovos, filtrarRegistrosDublicados } = require('./lerArquivos');
-const { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco,selecionarDadosPDF } = require('../model/operacoesBanco');
-const { gerarPDF } = require('./gerarPDF');
-
-// Definição de caminhos relativos ao projeto
-const pastaEntrada = path.resolve(__dirname, '..', '..', 'arquivosPgr', 'excel_csv');
-const pastaSaida = path.resolve(__dirname, '..', '..', 'arquivosPgr', 'pdf');
+const pastaEntrada = path.resolve(process.cwd(), '..', 'arquivosPgr', 'excel_csv');
 
 // Verifica se o arquivo é válido:
 const isArquivoValido = (filePath) => {
@@ -17,62 +14,34 @@ const isArquivoValido = (filePath) => {
     );
 };
 
-const processarArquivoEntrada = async (filePath) => {
-    const dadosArquivo = processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto 
-    if (dadosArquivo.length === 0) {
-        throw new Error(`Arquivo VAZIO:     ${filePath}`);
-    }
-
-    const dadosUnicos = filtrarRegistrosDublicados(dadosArquivo); // Desconsidera os registros duplicados no arquivo
-    return dadosUnicos.map(tratarCamposVazios); // Trata os campos vazios
-};
-
-const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacaoCols, respostasCols) => {
-    // Criar banco e tabelas
-    await criarBancoEDefinirTabelas(databaseName, identificacaoCols, respostasCols);
-
-    const dadosBanco = await recuperarDadosDoBanco(databaseName); // 1. Recupera os dados salvos no banco
-    const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco); // 2. Verifica se há registros nos arquivos diferentes dos registros do banco
-
-    if (novosRegistros.length > 0) {
-        await salvarDados(novosRegistros, databaseName); // 3. Salvando os novos registros
-    } else {
-        console.log(`Sem novos registros para salvar no banco: ${databaseName}`);
-    }
-
-    return novosRegistros.length > 0;
-};
-
-const gerarEDisponibilizarPDF = async (databaseName, respostasCols) => {
-    const dadosPDF = await selecionarDadosPDF(databaseName, respostasCols); // 4. Selecionar os dados para gerar PDF
-    if (dadosPDF.length === 0) {
-        console.warn(`Nenhum dado disponível para gerar PDF. ARQUIVO: ${databaseName}`);
-        return;
-    }
-
-    const pdf = await gerarPDF(dadosPDF, pastaSaida, databaseName); // 5. Gerar arquivo PDF
-    console.log(`\n PDF gerado e salvo em: ${pdf}`);
-};
-
 const inicializarPrograma = () => {
-    chokidar.watch(pastaEntrada, { persistent: true }).on('add', async (filePath) => {
+    console.log("\n-----------------------------------------------------------------------------------------------\n");
+    console.log("PROGRAMA INICIADO COM SUCESSO!!!");
+
+    chokidar.watch(pastaEntrada, { persistent: true, ignored: /(^|[/\\])~\$.*/ }).on('add', async (filePath) => { 
+        console.log("MONITORANDO PASTA...");
+        
         try {
             if (!isArquivoValido(filePath)) return;
+            console.log(`ARQUIVO VÁLIDO ENCONTRADO --> ${filePath}`);
 
             const dadosTratados = await processarArquivoEntrada(filePath);
+            console.log("ARQUIVO PROCESSADO!\n");
             const databaseName = path.basename(filePath, path.extname(filePath)); // Define o nome do banco, conforme nome do arquivo sem extensão
             
             if (!databaseName) throw new Error("Nome inválido para o banco de dados.");
-
-            const identificacaoCols = Object.keys(dadosTratados[0]).slice(0, 6); // Define nome das colunas da tabela 'identificacao'
-            const respostasCols = Object.keys(dadosTratados[0]).slice(6); // Define nome das colunas da tabela 'respostas'
-
-            await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, respostasCols);
-            await gerarEDisponibilizarPDF(databaseName, respostasCols);
-
+            // Define nome das colunas da tabela 'identificacao'
+            const nomeSeisColunasArquivo = Object.keys(dadosTratados[0]).slice(0, 6);
+            const nomeRestanteColunasArquivo = Object.keys(dadosTratados[0]).slice(6); 
+            const identificacaoCols = nomeSeisColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
+            const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
+            await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
+            await disponibilizarPDF(databaseName);
         } catch (err) {
             console.error("Impossível salvar os dados do arquivo no banco.", err.message);
         }
     });
+    console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
-module.exports = { inicializarPrograma };
+
+export { inicializarPrograma };

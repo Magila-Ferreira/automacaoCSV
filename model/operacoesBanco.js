@@ -1,9 +1,11 @@
-const { gerenciadorDeConexoesBD } = require('../config/configBanco');
+import { escalas, fatores, questoes } from './insertsEstaticos.js';
+import { gerenciadorDeConexoesBD } from '../config/configBanco.js';
+import { filtrarRegistrosNovos, recuperarDadosDoBanco } from './consultasBanco.js';
+
 const usuario = 'root'; // Usuário com permissões para criar banco e tabelas
 
-const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasCols) => {
+const criarBanco = async (database) => {
     const conexoes = gerenciadorDeConexoesBD(null, usuario);
-
     try {
         // SQL
         const create_database = `CREATE DATABASE IF NOT EXISTS \`${database}\`
@@ -11,11 +13,35 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
 
         // Criar banco de dados
         await conexoes.query(create_database);
-        
+        console.log(`Banco criado ou existente BD: ${database}`);
+    } catch (error) {
+        console.error("Erro ao criar banco e/ou tabelas: ", error.message);
+    } finally {
+        conexoes.end();
+    }
+}
+const definirTabelas = async (database, identificacaoCols) => {
+    try {
         // Reutilizar a conexão para o banco criado
         const db = gerenciadorDeConexoesBD(database);
 
         // SQL
+        const create_table_escala = `CREATE TABLE IF NOT EXISTS escala (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nome VARCHAR(255) NOT NULL);`; 
+
+        const create_table_fator = `CREATE TABLE IF NOT EXISTS fator (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nome VARCHAR(150) NOT NULL,
+            id_escala INT NOT NULL,
+            FOREIGN KEY (id_escala) REFERENCES escala(id));`;
+           
+        const create_table_questao = `CREATE TABLE IF NOT EXISTS questao (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            afirmacao VARCHAR(255) NOT NULL,
+            id_fator INT NOT NULL,
+            FOREIGN KEY (id_fator) REFERENCES fator(id));`;
+
         const create_table_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
             id INT AUTO_INCREMENT PRIMARY KEY,
             ${identificacaoCols.map((col) => {
@@ -34,138 +60,103 @@ const criarBancoEDefinirTabelas = async (database, identificacaoCols, respostasC
                         return `\`${col}\` TEXT NOT NULL`; // Define o tipo de dados padrão    
                 }
             }).join(', ')},
-            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`;
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (setor, cargo, idade, escolaridade, estadoCivil, genero));`;
 
-        const create_table_respostas = `CREATE TABLE IF NOT EXISTS respostas (
-            id INT AUTO_INCREMENT PRIMARY KEY, id_identificacao INT NOT NULL, 
-            ${respostasCols.map((col) => `\`${col}\` VARCHAR(20) NOT NULL`).join(', ')}, 
-            FOREIGN KEY (id_identificacao) REFERENCES identificacao(id));`;
+        const create_table_questao_resposta = `CREATE TABLE IF NOT EXISTS questao_resposta (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            id_identificacao INT NOT NULL,
+            id_questao INT NOT NULL,
+            resposta VARCHAR(50) NOT NULL,
+            FOREIGN KEY (id_identificacao) REFERENCES identificacao(id),
+            FOREIGN KEY (id_questao) REFERENCES questao(id));`;
 
-        // Criar tabelas `identificacao` e `respostas`
+        // Criar tabelas 
+        await db.query(create_table_escala);
+        await db.query(create_table_fator);
+        await db.query(create_table_questao);
         await db.query(create_table_identificacao);
-        await db.query(create_table_respostas); 
+        await db.query(create_table_questao_resposta); 
         db.end();
-
+        console.log(`Tabelas criadas ou existentes!`);
     } catch (error) {
-        console.error("Erro ao criar banco e/ou tabelas: ", error.message);
-    } finally {
-        conexoes.end();
+        console.error("Erro ao criar Tabelas: ", error.message);
     }
-}
-const salvarDados = async (dados, database) => {
+};
+const salvarDados = async (dados, database, colsResposta) => {
     const db = gerenciadorDeConexoesBD(database, usuario);
-    
     try {
-        // SQL --> IDENTIFICACAO e RESPOSTAS
-        const insert_identificacao = `
-        INSERT IGNORE INTO identificacao 
+        // SQL --> INSERTS
+        const insert_escala = `INSERT IGNORE INTO escala (nome) VALUES (?)`;
+        const insert_fator = `INSERT IGNORE INTO fator (nome, id_escala) VALUES (?, ?)`;
+        const insert_questao = `INSERT IGNORE INTO questao (afirmacao, id_fator) VALUES (?, ?)`;
+
+        const insert_identificacao = `INSERT IGNORE INTO identificacao 
         (setor, cargo, idade, escolaridade, estadoCivil, genero) 
-        VALUES (?, ?, ?, ?, ?, ?)`;
+        VALUES (?, ?, ?, ?, ?, ?)`;      
 
-        const insert_respostas = (colunas) => `INSERT IGNORE INTO respostas 
-        (id_identificacao, ${colunas.join(', ')}) VALUES (?, ${colunas.map(() => '?').join(', ')})`;
+        const insert_questao_resposta = `INSERT IGNORE INTO questao_resposta 
+        (id_identificacao, id_questao, resposta) VALUES (?, ?, ?)`;    
 
+        // Insere dados na tabela escala
+        for (const escala of Object.values(escalas)) {
+            const valores_escala = (escala.nome);
+            await db.query(insert_escala, valores_escala);
+        };
+        // Insere dados na tabela fator
+        for (const fator of Object.values(fatores)) {
+            const valores_fator = [fator.nome, fator.id_escala];
+            await db.query(insert_fator, valores_fator);
+        };
+        // Insere dados na tabela questao
+        for (const questao of Object.values(questoes)) {
+            const valores_questao = [questao.afirmacao, questao.id_fator];
+            await db.query(insert_questao, valores_questao)
+        };
+
+        // Insere os dados na tabela identificação e questao_resposta
         for (const item of dados) {                     
-            const valores_identificacao = [
-                item.setor,
-                item.cargo, 
-                parseInt(item.idade, 10), 
-                item.escolaridade, 
-                item.estadoCivil, 
-                item.genero];
-                
-                // Insere na tabela 'identificação' caso não exista
-                const [result] = await db.query(insert_identificacao, valores_identificacao);
-                const id_identificacao = result.insertId;
+            const valores_identificacao = [item.setor, item.cargo, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];                
+    
+            // Insere na tabela 'identificação' caso não exista
+            const [result] = await db.query(insert_identificacao, valores_identificacao);
+            const id_identificacao = result.insertId || (rows.length > 0 ? rows[0].id : null);
 
             // VERIFICAÇÃO ADICIONAL:
             if (id_identificacao) {
-                const colunasRespostas = Object.keys(item).slice(6); // Obter o nome das colunas do arquivo para a tabela respostas
-                const valores_respostas = Object.values(item).slice(6); // Obter os valores do arquivo para a tabela respostas
-                await db.query(insert_respostas(colunasRespostas), [id_identificacao, ...valores_respostas]); 
+                // Insere as respostas associadas ao id_identificacao
+                for (let i = 0; i < colsResposta.length; i++) { // Itera sobre as colunas respostas
+                    const resposta = item[colsResposta[i]]; // Obtém o valor com base no índice da coluna
+                    const id_questao = i + 1; // Calcula o id da questão com base no índice da coluna
+
+                    if (resposta) { // Garante que a resposta não é vazia
+                        const valores_questao_resposta = [id_identificacao, id_questao, resposta];
+                        // Insere na tabela 'questao_resposta' caso não exista
+                        await db.query(insert_questao_resposta, valores_questao_resposta);
+                    }
+                }
             } 
-        }
+        }         
+        console.log(`Registros salvos com sucesso: ${database}`);
     } catch (error) {
         console.error(`Erro ao salvar dados. Banco: ${database}. Erro: ${error.message}`);
     } finally {
         db.end();
     }
 };
+const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacaoCols, colsResposta) => {
+    // Criar banco
+    await criarBanco(databaseName);
+    await definirTabelas(databaseName, identificacaoCols); 
 
-// Recupera os registros do banco
-const recuperarDadosDoBanco = async (database) => {
-    const db = gerenciadorDeConexoesBD(database);
+    const dadosBanco = await recuperarDadosDoBanco(databaseName); // 1. Recupera os dados salvos no banco
+    const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco); // 2. Verifica se há registros nos arquivos diferentes dos registros do banco
 
-    try {
-        const select_dados_identificacao = `
-            SELECT setor, cargo, idade, escolaridade, estadoCivil, genero 
-            FROM identificacao`;
-
-        const [rows] = await db.query(select_dados_identificacao);       
-
-        if (!rows || rows.length === 0) {
-            return [];
-        }
-        
-        return rows.map(row => ({
-            setor: row.setor?.trim(),
-            cargo: row.cargo?.trim(),
-            idade: parseInt(row.idade, 10),
-            escolaridade: row.escolaridade?.trim(),
-            estadoCivil: row.estadoCivil?.trim(),
-            genero: row.genero?.trim(),           
-        }));
-    } catch (error) {
-        console.error(`Erro ao recuperar dados: ${error.message}`);
-        return [];
-    } finally {
-        db.end();
+    if (novosRegistros.length > 0) {
+        await salvarDados(novosRegistros, databaseName, colsResposta); // 3. Salvando os novos registros
+    } else {
+        console.log(`Sem novos registros para salvar no banco: ${databaseName}`);
     }
-}
-
-// Seleciona os dados do banco para salvar no PDF
-const selecionarDadosPDF = async (database, nomeDasColunasNaTabelaRespostas) => {
-    const db = gerenciadorDeConexoesBD(database);
-
-    try {
-        if (nomeDasColunasNaTabelaRespostas.length === 0) {
-            console.warn("Colunas não encontradas na tabela 'respostas'!");
-            return [];
-        }
-
-        // SQL com colunas dinâmicas para a tabela respostas  
-        const select_dados_pdf = `
-            SELECT i.setor, i.cargo, i.idade, i.escolaridade, i.estadoCivil, i.genero, r.id 
-                AS id_resposta, ${nomeDasColunasNaTabelaRespostas.map((coluna) => `r.${coluna}`).join(', ')} 
-            FROM identificacao i
-            LEFT JOIN respostas r ON i.id = r.id_identificacao`;
-
-        const [rows] = await db.query(select_dados_pdf);       
-
-        if (!rows || rows.length === 0) {
-            console.warn("Não há dados para gerar o PDF!");
-            return [];
-        }
-
-        // Inclusão dinâmica dos resultados
-        return rows.map(row => ({
-            setor: row.setor,
-            cargo: row.cargo,
-            idade: parseInt(row.idade, 10),
-            escolaridade: row.escolaridade,
-            estadoCivil: row.estadoCivil,
-            genero: row.genero,
-            respostas: nomeDasColunasNaTabelaRespostas.reduce((colDinamicas, coluna) => {
-                colDinamicas[coluna] = row[coluna];
-                return colDinamicas;
-            }, {})
-    }));
-
-    } catch (error) {
-        console.error(`Erro ao selecionar dados para gerar PDF: ${error.message}`);
-        return [];
-    } finally {
-        db.end();
-    }
-}
-module.exports = { criarBancoEDefinirTabelas, salvarDados, recuperarDadosDoBanco, selecionarDadosPDF };
+    return novosRegistros.length > 0;
+};
+export { salvarRegistrosNoBanco };

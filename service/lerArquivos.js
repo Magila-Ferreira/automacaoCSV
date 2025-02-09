@@ -1,10 +1,9 @@
-const fs = require('fs');
-const Papa = require('papaparse');
-const xlsx = require('node-xlsx');
+import fs from 'fs';
+import Papa from 'papaparse';
+import xlsx from 'node-xlsx';
 
 // Função para processar o arquivo
 const processarArquivo = (filePath) => {
-
     // Leitura de arquivos CSV
     if (filePath.endsWith('.csv')) {
         const conteudo = fs.readFileSync(filePath, 'utf-8');
@@ -13,7 +12,6 @@ const processarArquivo = (filePath) => {
             skipEmptyLines: true,
             delimiter: ';',
         });
-
         if (resultado.errors.length > 0) {
             console.error("Erro na leitura do CSV: ", resultado.errors);
             return [];
@@ -49,28 +47,6 @@ const processarArquivo = (filePath) => {
         return [];
     };
 };
-
-// Preenche os campos vazios com "Não informado"
-const tratarCamposVazios = (item) => {
-    // Valor padrão dos atributos vazios
-    const valorPadrao = {
-        idade: 0,
-        default: 'NÃO INFORMADO',
-    };
-
-    // Preencher os valores padrão
-    Object.keys(item).forEach((key) => {
-        
-        // Tratamento para idade
-        if (key === 'idade') {
-            item[key] = parseInt(item[key], 10) || valorPadrao.idade;
-        } else {
-            item[key] = item[key] || valorPadrao.default;
-        }
-    });
-    return item;
-};
-
 // Filtra os dados duplicados [se houver] no próprio arquivo, antes de tentar inserir no banco
 const filtrarRegistrosDublicados = (dadosArquivo) => {
     const registrosUnicos = new Set();
@@ -88,24 +64,30 @@ const filtrarRegistrosDublicados = (dadosArquivo) => {
         return true;
     });
 };
-
-// Verifica quais dados dos arquivos não estão registrados no banco
-const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
-    
-    // Converte os registros do banco em um Set de string JSON (para comparação)
-    const registrosBanco = new Set(dadosBanco.map(item => `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`));
-
-    // Filtra os dados que não estão no banco
-    return dadosArquivo.filter(item => {
-        const registroArquivo = `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
-
-        return !registrosBanco.has(registroArquivo); // Retorna os registros que não estão no banco
+// Preenche os campos vazios com "Não informado"
+const tratarCamposVazios = (item) => {
+    // Valor padrão dos atributos vazios
+    const valorPadrao = {
+        idade: 0,
+        default: 'NÃO INFORMADO',
+    };
+    // Preencher os valores padrão
+    Object.keys(item).forEach((key) => {
+        // Tratamento para idade
+        if (key === 'idade') {
+            item[key] = parseInt(item[key], 10) || valorPadrao.idade;
+        } else {
+            item[key] = item[key] || valorPadrao.default;
+        }
     });
+    return item;
 };
-
-module.exports = {  
-    processarArquivo, 
-    tratarCamposVazios, 
-    filtrarRegistrosDublicados, 
-    filtrarRegistrosNovos 
+const processarArquivoEntrada = async (filePath) => {
+    const dadosArquivo = processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto 
+    if (dadosArquivo.length === 0) {
+        throw new Error(`Arquivo VAZIO:     ${filePath}`);
+    }
+    const dadosUnicos = filtrarRegistrosDublicados(dadosArquivo); // Desconsidera os registros duplicados no arquivo
+    return dadosUnicos.map(tratarCamposVazios); // Trata os campos vazios
 };
+export { processarArquivoEntrada };

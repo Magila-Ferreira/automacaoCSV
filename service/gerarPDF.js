@@ -1,6 +1,6 @@
-const pacotePDF = require('pdfkit');
-const fs = require('fs');
-const path = require('path');
+import pacotePDF from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 
 // Gerar arquivo PDF a partir dos dadosPDF selecionados
 const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
@@ -48,4 +48,4 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
         throw error;
     }
 };
-module.exports = { gerarPDF };
+export { gerarPDF };

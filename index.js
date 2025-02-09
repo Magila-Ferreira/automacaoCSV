@@ -1,5 +1,5 @@
-//const { resolve } = require('chart.js/helpers');
-const { inicializarPrograma } = require('./service/monitorarPasta');
+// import { resolve } from 'chart.js/helpers';
+import { inicializarPrograma } from './service/monitorarPasta.js';
 
 (async () => {
     try {
