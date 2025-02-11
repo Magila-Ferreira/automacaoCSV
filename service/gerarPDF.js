@@ -18,23 +18,16 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
         pdf.pipe(fluxoEscrita);
 
         // Criação do conteúdo do PDF
-        pdf.fontSize(16).text('Relatório de Avaliações', { align: 'center' });
-        pdf.moveDown();
+        pdf.fontSize(16).text('RESULTADO DO QUESTIONÁRIO DE ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS', { align: 'center' });
+		pdf.moveDown();
 
-        dadosPDF.forEach((avaliacao, index) => {
+		dadosPDF.forEach((avaliacao, index) => {
         pdf.fontSize(12).text(`Avaliação PGR ${index + 1}`);
-        pdf.text(`Setor: ${avaliacao.setor}`);
-        pdf.text(`Cargo: ${avaliacao.cargo}`);
-        pdf.text(`Idade: ${avaliacao.idade}`);
-        pdf.text(`Escolaridade: ${avaliacao.escolaridade}`);
-        pdf.text(`Estado Civil: ${avaliacao.estadoCivil}`);
-        pdf.text(`Gênero: ${avaliacao.genero}`);
-
-        const respostas = Object.entries(avaliacao.respostas)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(', ');
-
-        pdf.text(`Respostas: ${respostas}`);
+        pdf.text(`IDENTIFICADOR: ${avaliacao.identificador}`);
+        pdf.text(`SETOR: ${avaliacao.setor}`);
+        pdf.text(`FATOR: ${avaliacao.fator}`);
+        pdf.text(`AFIRMATIVA: ${avaliacao.afirmativa}`);
+		pdf.text(`RESPOSTA: ${avaliacao.resposta}`);
         pdf.moveDown();  
     });
 

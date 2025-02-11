@@ -86,7 +86,7 @@ const processarArquivoEntrada = async (filePath) => {
     const dadosArquivo = processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto 
     if (dadosArquivo.length === 0) {
         throw new Error(`Arquivo VAZIO:     ${filePath}`);
-    }
+    }    
     const dadosUnicos = filtrarRegistrosDublicados(dadosArquivo); // Desconsidera os registros duplicados no arquivo
     return dadosUnicos.map(tratarCamposVazios); // Trata os campos vazios
 };

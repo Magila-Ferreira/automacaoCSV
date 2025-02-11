@@ -13,6 +13,10 @@ const isArquivoValido = (filePath) => {
         && (filePath.endsWith('.csv') || filePath.endsWith('.xlsx')) // Se for csv ou xlsx
     );
 };
+// Verifica compatibilidade entre as colunas do arquivo e as colunas da tabela 'identificacao'
+const compativelBanco = (nomeSeisColunasArquivo) => {
+    return (nomeSeisColunasArquivo.map(coluna => coluna.toLowerCase()).join('-') === 'setor-cargo-idade-escolaridade-estadocivil-genero');
+};
 
 const inicializarPrograma = () => {
     console.log("\n-----------------------------------------------------------------------------------------------\n");
@@ -30,13 +34,20 @@ const inicializarPrograma = () => {
             const databaseName = path.basename(filePath, path.extname(filePath)); // Define o nome do banco, conforme nome do arquivo sem extensão
             
             if (!databaseName) throw new Error("Nome inválido para o banco de dados.");
+
             // Define nome das colunas da tabela 'identificacao'
-            const nomeSeisColunasArquivo = Object.keys(dadosTratados[0]).slice(0, 6);
-            const nomeRestanteColunasArquivo = Object.keys(dadosTratados[0]).slice(6); 
-            const identificacaoCols = nomeSeisColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
+			const nomeSeisColunasArquivo = Object.keys(dadosTratados[0]).slice(0, 6);
+			const identificacaoCols = nomeSeisColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
+
+            // Verifica correspondência entre as colunas do arquivo e as colunas da tabela 'identificacao'
+            if (!compativelBanco(nomeSeisColunasArquivo)) 
+                return console.error(`As colunas do arquivo '${databaseName}' são incompatíveis com a tabela 'identificacao'.\n`);
+
+			const nomeRestanteColunasArquivo = Object.keys(dadosTratados[0]).slice(6); 
             const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
-            await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
-            await disponibilizarPDF(databaseName);
+			
+			await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
+            await disponibilizarPDF(databaseName, colsResposta);
         } catch (err) {
             console.error("Impossível salvar os dados do arquivo no banco.", err.message);
         }
