@@ -7,19 +7,19 @@ const escalas = {
 
 const fatores = {
     /* ESCALA 1 */
-    fator1: {nome: "FATOR 1 - divisão das tarefas", id_escala: 1},
-    fator2: {nome: "FATOR 2 - divisão social do trabalho", id_escala: 1},
+    fator1: {nome: "FATOR 1 - Divisão das tarefas", id_escala: 1},
+    fator2: {nome: "FATOR 2 - Divisão social do trabalho", id_escala: 1},
     /* ESCALA 2 */
-    fator3: {nome: "FATOR 1 - estilo individualista", id_escala: 2},
-    fator4: {nome: "FATOR 2 - estilo coletivista", id_escala: 2},
+    fator3: {nome: "FATOR 1 - Estilo individualista", id_escala: 2},
+    fator4: {nome: "FATOR 2 - Estilo coletivista", id_escala: 2},
     /* ESCALA 3 */
-    fator5: {nome: "FATOR 1 - falta de sentido no trabalho", id_escala: 3},
-    fator6: {nome: "FATOR 2 - esgotamento mental", id_escala: 3},
-    fator7: {nome: "FATOR 3 - falta de reconhecimento", id_escala: 3},
+    fator5: {nome: "FATOR 1 - Falta de sentido no trabalho", id_escala: 3},
+    fator6: {nome: "FATOR 2 - Esgotamento mental", id_escala: 3},
+    fator7: {nome: "FATOR 3 - Falta de reconhecimento", id_escala: 3},
     /* ESCALA 4 */
-    fator8: {nome: "FATOR 1 - danos psicologicos", id_escala: 4},
-    fator9: {nome: "FATOR 2 - danos sociais", id_escala: 4},
-    fator10:{nome: "FATOR 3 - danos fisicos", id_escala: 4},
+    fator8: {nome: "FATOR 1 - Danos psicologicos", id_escala: 4},
+    fator9: {nome: "FATOR 2 - Danos sociais", id_escala: 4},
+    fator10:{nome: "FATOR 3 - Danos fisicos", id_escala: 4},
 };
 
 const questoes = {

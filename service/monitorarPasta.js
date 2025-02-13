@@ -47,9 +47,9 @@ const inicializarPrograma = () => {
             const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
 			
 			await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
-            await disponibilizarPDF(databaseName, colsResposta);
+            await disponibilizarPDF(databaseName);
         } catch (err) {
-            console.error("Impossível salvar os dados do arquivo no banco.", err.message);
+            console.error(`ERRO: ${err}\n`);
         }
     });
     console.log("\n-----------------------------------------------------------------------------------------------\n");

@@ -1,6 +1,6 @@
 import { gerenciadorDeConexoesBD } from "../config/configBanco.js";
 
-// Recupera os registros do banco
+// Recuperar os registros do banco
 const recuperarDadosDoBanco = async (database) => {
 	const db = gerenciadorDeConexoesBD(database);
 	try {
@@ -28,7 +28,7 @@ const recuperarDadosDoBanco = async (database) => {
 		db.end();
 	}
 };
-// Verifica quais dados do arquivo não estão registrados no banco
+// Verificar quais dados do arquivo não estão registrados no banco
 const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 	// Converte os registros do banco em um Set de string JSON (para comparação)
 	const registrosBanco = new Set(
@@ -51,45 +51,35 @@ const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 		return !registrosBanco.has(registroArquivo); // Retorna os registros que não estão no banco
 	});
 };
-// Seleciona os dados do banco para salvar no PDF
-const selecionarDadosPDF = async (database) => {
+// Selecionar os dados do banco para salvar no PDF
+const selecionarDadosPDF = async (database, instrucao_select, setor = null) => {
 	const db = gerenciadorDeConexoesBD(database);
 
+	// Verificar se a instrucao_select é select_setores
+	if (instrucao_select.trim().toLowerCase().startsWith("select distinct setor")) {
+		const [rows] = await db.query(instrucao_select);
+		return rows;
+	}
+
+	let resultados = {};
 	try {
-		// Seleciona os dados da empresa 
-		const select_dados_empresa = `
-			SELECT qr.id_identificacao, i.setor, f.nome AS fator, qr.id_questao, qr.resposta
-			FROM questao_resposta qr 
-			JOIN identificacao i ON qr.id_identificacao = i.id
-			JOIN questao q ON qr.id_questao = q.id
-			JOIN fator f ON q.id_fator = f.id
-			WHERE f.id = 1
-			ORDER BY qr.id_identificacao, i.setor, f.nome, qr.resposta;
-		`;
+		for (let fator = 1; fator <= 10; fator++) {
+			let parametros = setor ? [fator, setor] : [fator]; // Adicionar setor aos parâmetros
+			const [rows] = await db.query(instrucao_select, parametros);
 
-		// Seleciona os dados por setor
-		const select_dados_setor = ``; // Construir um array com os nomes dos setores para filtrar
+			resultados[`fator_${fator}`] = rows.map(row => ({
+				escala: row.escala,
+				fator: row.fator,
+				resposta: row.resposta,
+				quantidade: row.quantidade,
+				setor: row.setor || setor, 
+			}));
+		};
+		return resultados;
 
-		const [rows] = await db.query(select_dados_empresa);
-
-		if (!rows || rows.length === 0) {
-			console.warn("Não há dados para gerar o PDF!");
-			return [];
-		}
-
-		// Inclusão dinâmica dos resultados
-		return rows.map((row) => ({
-			identificador: row.id_identificacao,   
-			setor: row.setor,
-			fator: row.fator,
-			afirmativa: row.id_questao,
-			resposta: row.resposta, 
-		}));
 	} catch (error) {
-		console.error(
-			`Erro ao selecionar dados para gerar PDF: ${error.message}`
-		);
-		return [];
+		console.error(`Erro ao selecionar dados para gerar PDF: ${error.message}`);
+		return {};
 	} finally {
 		db.end();
 	}

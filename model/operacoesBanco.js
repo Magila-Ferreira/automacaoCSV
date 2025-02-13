@@ -81,7 +81,7 @@ const definirTabelas = async (database, identificacaoCols) => {
         console.log(`Tabelas criadas ou existentes!`);
     } catch (error) {
         console.error("Erro ao criar Tabelas: ", error.message);
-    }
+	}
 };
 const salvarDados = async (dados, database, colsResposta) => {
     const db = gerenciadorDeConexoesBD(database, usuario);
@@ -137,7 +137,7 @@ const salvarDados = async (dados, database, colsResposta) => {
                 }
             } 
         }         
-        console.log(`Registros salvos com sucesso: ${database}`);
+        console.log(`Registros salvos com sucesso: ${database}\n`);
     } catch (error) {
         console.error(`Erro ao salvar dados. Banco: ${database}. Erro: ${error.message}`);
     } finally {
@@ -147,7 +147,7 @@ const salvarDados = async (dados, database, colsResposta) => {
 const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacaoCols, colsResposta) => {
     // Criar banco
     await criarBanco(databaseName);
-    await definirTabelas(databaseName, identificacaoCols); 
+	await definirTabelas(databaseName, identificacaoCols); 
 
     const dadosBanco = await recuperarDadosDoBanco(databaseName); // 1. Recupera os dados salvos no banco
     const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco); // 2. Verifica se há registros nos arquivos diferentes dos registros do banco
@@ -156,7 +156,7 @@ const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacao
         await salvarDados(novosRegistros, databaseName, colsResposta); // 3. Salvando os novos registros
     } else {
         console.log(`Sem novos registros para salvar no banco: ${databaseName}`);
-    }
-    return novosRegistros.length > 0;
+	}
+	return novosRegistros.length > 0;
 };
 export { salvarRegistrosNoBanco };

@@ -1,4 +1,4 @@
-// TRATATIVAS CONFIGURADAS:
+// TRATATIVAS:
 
 1. A aplicação identifica os registros através dos campos: setor, cargo, idade, escolaridade, estadoCivil, gênero
 ---------------> Será necessário trocar essa informação pelo id do colaborador 
