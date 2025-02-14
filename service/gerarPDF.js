@@ -83,7 +83,7 @@ const formatarTextoConteudo = (pdf, texto) => {
 }
 const formatarTextoFator = (pdf, texto) => {
 	espacamentoVertical(pdf, 1);
-	pdf.fontSize(14).fillColor('#000').font('Arial-Negrito').text(texto, { align: 'center' });
+	pdf.fontSize(14).fillColor('#000').font('Arial').text(texto, { align: 'center' });
 	espacamentoVertical(pdf, 1);
 } 
 const formatarTextoEscala = (pdf, texto) => {
