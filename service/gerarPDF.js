@@ -6,13 +6,22 @@ import path from 'path';
 const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 	try {
 		// Criar o arquivo PDF
-		const pdf = new pacotePDF();
+		const pdf = new pacotePDF({ size: 'A4' });
 
 		// Caminho do arquivo PDF
 		const caminhoArquivoPDF = path.join(pastaDestino, `${nomeArquivo}.pdf`);
 
 		pdf.registerFont('Arial', './assets/fonts/arial.ttf');
 		pdf.registerFont('Arial-Negrito', './assets/fonts/ARIALNB.TTF');
+
+		// Insere imagem no PDF
+		// -----	pdf.image('background.jpg', 0, 0, { width: doc.page.width, height: doc.page.height });
+
+		// Define o tamanho do cabeçalho
+		// -----	const alturaCabecalho = 200;
+
+		// Definir cor de fundo
+		// -----	pdf.rect(0, 0, pdf.page.width, alturaCabecalho).fill('#def');
 
 		// Criar o fluxo de escrita do PDF
 		const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
@@ -21,8 +30,8 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 		pdf.pipe(fluxoEscrita);
 
 		// Cabeçalho do PDF
-		pdf.fontSize(16).fillColor('#55a').font('Arial-Negrito').text('RESULTADO DO QUESTIONÁRIO DE ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS', { align: 'center' });
-		espacamentoVertical(pdf, 2);
+		formatarTitulo(pdf, 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS');
+		formatarTextoCabecalho(pdf, 'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase());
 
 		// Iterar sobre cada fator
 		for (let iFator = 1; iFator <= 10; iFator++) { 
@@ -36,17 +45,14 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			dadosFator.forEach((avaliacao, index) => {
 				if (index === 0) {
 					const { escala, fator } = avaliacao;					
-					espacamentoVertical(pdf, 1);
-
+					
 					// Título - ESCALA
 					if ([1, 3, 5, 8].includes(iFator)) {
-						pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(`${escala}`, { align: 'justify' });
+						formatarTextoEscala(pdf, `${escala}`);
 					}
 
 					// Título - FATOR
-					espacamentoVertical(pdf, 1);
-					pdf.fontSize(14).fillColor('black').font('Arial-Negrito').text(`${fator}`, { align: 'center' });
-					espacamentoVertical(pdf, 1);
+					formatarTextoFator(pdf, `${fator}`);
 				}
 			});
 
@@ -57,11 +63,11 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 				totalRespostas += quantidadeResposta;
 
 				// Conteúdo do PDF
-				pdf.fontSize(12).fillColor('black').font('Arial').text(`${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
+				formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
 			});
 			// Total de respostas por fator
 			espacamentoVertical(pdf, 1);
-			pdf.fontSize(12).text(`Total de ${totalRespostas} respostas`);
+			formatarTextoConteudo(pdf, `Total de ${totalRespostas} respostas`);
 			espacamentoVertical(pdf, 1);
 		};
 		// Finaliza o PDF
@@ -72,7 +78,26 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 		throw error;
 	}
 };
-
+const formatarTextoConteudo = (pdf, texto) => {
+	pdf.fontSize(12).fillColor('#000').font('Arial').text(texto, { align: 'justify'});
+}
+const formatarTextoFator = (pdf, texto) => {
+	espacamentoVertical(pdf, 1);
+	pdf.fontSize(14).fillColor('#000').font('Arial-Negrito').text(texto, { align: 'center' });
+	espacamentoVertical(pdf, 1);
+} 
+const formatarTextoEscala = (pdf, texto) => {
+	espacamentoVertical(pdf, 2);
+	pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(texto, { align: 'justify' });
+	espacamentoVertical(pdf, 1);
+};
+const formatarTextoCabecalho = (pdf, texto) => {
+	pdf.fontSize(14).fillColor('#555').font('Arial-Negrito').text(texto, { align: 'justify' });
+}
+const formatarTitulo = (pdf, texto) => {
+	pdf.fontSize(16).fillColor('#35a').font('Arial-Negrito').text(texto, { align: 'center' });
+	espacamentoVertical(pdf, 1);
+}
 const espacamentoVertical = (pdf, numLinhas) => {
 	let espacamento = 0;
 	do {
@@ -80,4 +105,4 @@ const espacamentoVertical = (pdf, numLinhas) => {
 		espacamento++;
 	} while (espacamento < numLinhas);
 };
-export { gerarPDF, espacamentoVertical };
+export { gerarPDF, espacamentoVertical, formatarTitulo, formatarTextoCabecalho, formatarTextoEscala, formatarTextoFator, formatarTextoConteudo };

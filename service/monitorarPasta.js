@@ -54,5 +54,4 @@ const inicializarPrograma = () => {
     });
     console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
-
 export { inicializarPrograma };

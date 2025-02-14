@@ -54,8 +54,6 @@ const disponibilizarPDF = async (databaseName) => {
 			return;
 		};
 
-		console.log("VERIFICANDO LOCAL DO ERRO --------------------------------------------> ");
-
 		// Gerar o PDF da empresa  
 		const pdfEmpresa = await gerarPDF(dadosPDF, pastaSaida, databaseName); 
 		console.log(`\nPDF da Empresa --> gerado e salvo em: ${pdfEmpresa}`);
