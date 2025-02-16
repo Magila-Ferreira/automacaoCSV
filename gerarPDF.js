@@ -1,7 +1,7 @@
 import pacotePDF from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
-import { gerarGrafico } from './gerarGraficos.js';
+//import { gerarGrafico } from './gerarGraficos.js';
 
 // Gerar arquivo PDF a partir dos dadosPDF selecionados
 const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
@@ -14,6 +14,15 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 
 		pdf.registerFont('Arial', './assets/fonts/arial.ttf');
 		pdf.registerFont('Arial-Negrito', './assets/fonts/ARIALNB.TTF');
+
+		// Insere imagem no PDF
+		// -----	pdf.image('background.jpg', 0, 0, { width: doc.page.width, height: doc.page.height });
+
+		// Define o tamanho do cabeçalho
+		// -----	const alturaCabecalho = 200;
+
+		// Definir cor de fundo
+		// -----	pdf.rect(0, 0, pdf.page.width, alturaCabecalho).fill('#def');
 
 		// Criar o fluxo de escrita do PDF
 		const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
@@ -45,17 +54,22 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 
 					// Título - FATOR
 					formatarTextoFator(pdf, `${fator}`);
-					espacamentoVertical(pdf, 0.5);
 				}
 			});
-			// Inserir gráficos do fator
-			const localImagens = await gerarGrafico(dadosFator);
-			console.log("LOCAL IMAGENS: ", localImagens);
 
-			for (const caminhoImagem of localImagens) {
-				pdf.image(caminhoImagem, { fit: [400, 700], align: "center" });
-				espacamentoVertical(pdf, 15);
-			}
+			let totalRespostas = 0;
+			dadosFator.forEach((avaliacao) => {
+				const conteudoResposta = avaliacao.resposta;
+				const quantidadeResposta = avaliacao.quantidade;
+				totalRespostas += quantidadeResposta;
+
+				// Conteúdo do PDF
+				formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
+			});
+			// Total de respostas por fator
+			espacamentoVertical(pdf, 1);
+			formatarTextoConteudo(pdf, `Total de ${totalRespostas} respostas`);
+			espacamentoVertical(pdf, 1);
 		};
 		// Finaliza o PDF
 		pdf.end();

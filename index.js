@@ -1,4 +1,3 @@
-// import { resolve } from 'chart.js/helpers';
 import { inicializarPrograma } from './service/monitorarPasta.js';
 
 (async () => {
