@@ -1,7 +1,8 @@
 import pacotePDF from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
-import { espacamentoVertical, formatarTitulo, formatarTextoCabecalho, formatarTextoEscala, formatarTextoFator, formatarTextoConteudo } from './gerarPDF.js';
+import { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque } from './gerarPDF.js';
+import { introducao } from '../conteudo/conteudoPDF.js';
 
 const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 	try {
@@ -23,19 +24,23 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 		const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
 		pdf.pipe(fluxoEscrita);
 
-		// Cabeçalho do PDF
-		formatarTitulo(pdf, 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS');
+		// Primeira página do PDF
+		formatarPrimeiraPagina(pdf,
+			'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS',
+			'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase(),
+			introducao
+		);
 		
 		for (const setor in dadosSetores) {
-			formatarTextoCabecalho(pdf, 'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase());
-			formatarTextoCabecalho(pdf, "Setor de trabalho:                        " + `${setor.toUpperCase()}`)
+			pdf.addPage();
+			formatarTextoSetor(pdf, "Setor de trabalho:                        " + `${setor.toUpperCase()}`)
 
 			for (const escala in dadosSetores[setor]) {
+				espacamentoVertical(pdf, 1);
 				formatarTextoEscala(pdf, escala);
 
 				for (const fator in dadosSetores[setor][escala]) {
-					formatarTextoFator(pdf, fator);
-
+					formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
 					let totalRespostas = 0;
 					dadosSetores[setor][escala][fator].forEach((avaliacao) => {
 						const conteudoResposta = avaliacao.resposta;
@@ -44,15 +49,9 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 
 						formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
 					});
-
-					espacamentoVertical(pdf, 1);
-					formatarTextoConteudo(pdf, `Total de ${totalRespostas} respostas`);
+					formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
 					espacamentoVertical(pdf, 1);
 				}
-			}
-			// Verifica se o setor é diferente do último
-			if (setor !== Object.keys(dadosSetores)[Object.keys(dadosSetores).length - 1]) {
-				pdf.addPage(); // Iniciar o setor na próxima página
 			}
 		}
 		pdf.end();

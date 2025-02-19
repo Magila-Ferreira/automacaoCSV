@@ -155,7 +155,7 @@ const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacao
     if (novosRegistros.length > 0) {
         await salvarDados(novosRegistros, databaseName, colsResposta); // 3. Salvando os novos registros
     } else {
-        console.log(`Sem novos registros para salvar no banco: ${databaseName}`);
+        console.log(`Não há novos registros para salvar no banco: ${databaseName}`);
 	}
 	return novosRegistros.length > 0;
 };
