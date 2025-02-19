@@ -2,6 +2,7 @@ import pacotePDF from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import { gerarGrafico } from './gerarGraficos.js';
+import { introducao, estrutura } from '../conteudo/conteudoPDF.js';
 
 // Gerar arquivo PDF a partir dos dadosPDF selecionados
 const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
@@ -25,27 +26,29 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 		formatarTitulo(pdf, 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS');
 		formatarTextoCabecalho(pdf, 'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase());
 
+		// Conteúdo introdutório
+		espacamentoVertical(pdf, 2);
+		formatarTextoConteudo(pdf, introducao);
+		formatarTextoConteudo(pdf, estrutura);
+
 		// Iterar sobre cada fator
-		for (let iFator = 1; iFator <= 10; iFator++) { 
+		for (let iFator = 1; iFator <= 10; iFator++) {
 			const dadosFator = dadosPDF[`fator_${iFator}`] ?? [];
-			
+
 			// Verificar se o fator possui dados
 			if (dadosFator.length === 0) {
 				console.warn(`O fator ${iFator} não possui dados. Pulando...`);
-				continue; }
+				continue;
+			}
 
 			dadosFator.forEach((avaliacao, index) => {
 				if (index === 0) {
-					const { escala, fator } = avaliacao;					
-					
+					const { escala, fator } = avaliacao;
+
 					// Título - ESCALA
 					if ([1, 3, 5, 8].includes(iFator)) {
 						formatarTextoEscala(pdf, `${escala}`);
 					}
-
-					// Título - FATOR
-					formatarTextoFator(pdf, `${fator}`);
-					espacamentoVertical(pdf, 0.5);
 				}
 			});
 			// Inserir gráficos do fator
@@ -53,8 +56,11 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			console.log("LOCAL IMAGENS: ", localImagens);
 
 			for (const caminhoImagem of localImagens) {
-				pdf.image(caminhoImagem, { fit: [400, 700], align: "center" });
-				espacamentoVertical(pdf, 15);
+				if (pdf.y > 600) {
+					pdf.addPage();
+				}
+				pdf.image(caminhoImagem, { fit: [400, 600], align: "center" });
+				espacamentoVertical(pdf, 18);
 			}
 		};
 		// Finaliza o PDF
@@ -66,15 +72,15 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 	}
 };
 const formatarTextoConteudo = (pdf, texto) => {
-	pdf.fontSize(12).fillColor('#000').font('Arial').text(texto, { align: 'justify'});
+	pdf.fontSize(12).fillColor('#000').font('Arial').text(texto, { align: 'justify' });
 }
 const formatarTextoFator = (pdf, texto) => {
 	espacamentoVertical(pdf, 1);
 	pdf.fontSize(14).fillColor('#000').font('Arial').text(texto, { align: 'center', underline: true });
 	espacamentoVertical(pdf, 1);
-} 
+}
 const formatarTextoEscala = (pdf, texto) => {
-	espacamentoVertical(pdf, 2);
+	pdf.addPage();
 	pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(texto, { align: 'justify' });
 	espacamentoVertical(pdf, 1);
 };

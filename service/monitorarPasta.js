@@ -47,11 +47,12 @@ const inicializarPrograma = () => {
             const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
 			
 			await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
-            await disponibilizarPDF(databaseName);
+			await disponibilizarPDF(databaseName);
         } catch (err) {
-            console.error(`ERRO: ${err}\n`);
-        }
+			console.error(`ERRO: ${err}\n`);
+		}
     });
     console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
 export { inicializarPrograma };
+
