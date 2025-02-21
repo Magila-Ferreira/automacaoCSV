@@ -49,7 +49,7 @@ const inicializarPrograma = () => {
 			await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
 			await disponibilizarPDF(databaseName);
         } catch (err) {
-			console.error(`ERRO: ${err}\n`);
+			console.error(`${err}\n`);
 		}
     });
     console.log("\n-----------------------------------------------------------------------------------------------\n");

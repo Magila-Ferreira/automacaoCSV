@@ -59,7 +59,7 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			let posicaoY = pdf.y + 10;
 
 			for (const caminhoImagem of localImagens) {
-				if (pdf.y > 600) {
+				if (pdf.y > 500) {
 					pdf.addPage();
 					posicaoY = pdf.y; // Reinicia a posição Y na nova página
 				}
@@ -71,11 +71,29 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 				// Atualiza posição Y para o próximo elemento
 				posicaoY += alturaImagem + 5; // Evita sobreposição
 				pdf.y = posicaoY; // Atualiza pdf.y corretamente
+
+				for (const caminhoImagem of localImagens) {
+					if (fs.existsSync(caminhoImagem)) {
+						fs.unlinkSync(caminhoImagem);
+						console.log(`🗑️ Imagem deletada: ${caminhoImagem}`);
+					}
+				}
 			}
 			
 			// POSICIONAMENTO DO TEXTO
+			if (pdf.y > 700) {
+				pdf.addPage();
+				posicaoY = pdf.y; // Reinicia a posição Y na nova página
+			}
 			formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
 			let totalRespostas = 0;
+			
+			// Definir a ordem desejada
+			const ordemRespostas = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
+
+			// Ordenar os dados de acordo com essa ordem
+			dadosFator.sort((primeira, segunda) => ordemRespostas.indexOf(primeira.resposta) - ordemRespostas.indexOf(segunda.resposta));
+
 			dadosFator.forEach((avaliacao) => {
 				const conteudoResposta = avaliacao.resposta;
 				const quantidadeResposta = avaliacao.quantidade;
@@ -96,8 +114,8 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 	}
 };
 const formatarTextoEmDestaque = (pdf, destaque) => {
-	espacamentoVertical(pdf, 1);
 	pdf.fontSize(10).fillColor('#500').font('Arial-Negrito').text(destaque, { align: 'justify' });
+	espacamentoVertical(pdf, 3);
 };
 const formatarTextoConteudo = (pdf, conteudo) => {
 	pdf.fontSize(10).fillColor('#335').font('Arial').text(conteudo, { align: 'justify' });
@@ -108,10 +126,9 @@ const formatarTextoSubTitulo = (pdf, subtitulo) => {
 };
 const formatarTextoEscala = (pdf, escala) => {
 	pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(escala, { align: 'justify' });
-	espacamentoVertical(pdf, 1);
 };
 const formatarTextoSetor = (pdf, setor) => {
-	pdf.fontSize(14).fillColor('#555').font('Arial-Negrito').text(setor, { align: 'justify' });
+	pdf.fontSize(14).fillColor('#333').font('Arial-Negrito').text(setor, { align: 'justify' });
 };
 const formatarPrimeiraPagina = (pdf, titulo = null, cabecalho = null, introducao = null) => {
 	// TÍTULO

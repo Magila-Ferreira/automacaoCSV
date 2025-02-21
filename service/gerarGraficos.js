@@ -1,8 +1,9 @@
 import fs from "fs";
 import fetch from "node-fetch";
 
+let numGrafico = 1;
 // Função para gerar gráfico de barras horizontal com QuickChart
-async function gerarGrafico(dadosFator) {
+async function gerarGrafico(dadosFator, setor = null) {
 	// Agrupar dados por fator
 	const fatoresAgrupados = {};
 	dadosFator.forEach(({ fator, resposta, quantidade }) => {
@@ -14,7 +15,6 @@ async function gerarGrafico(dadosFator) {
 	const maximoTentativas = 5;
 
 	let tentativa = 0;
-
 	while (tentativa < maximoTentativas) {
 		try {
 			console.log(`\nTentativa ${tentativa + 1} de ${maximoTentativas}...`);
@@ -28,7 +28,7 @@ async function gerarGrafico(dadosFator) {
 				// Ordenar os dados de acordo com a ordem dos rótulos 
 				const dadosOrdenados = respostas.map((respostaItem) => ({
 					rotulo: respostaItem.resposta,
-					porcentagem: ((respostaItem.quantidade / totalRespostas) * 100).toFixed(1)
+					porcentagem: Math.round((respostaItem.quantidade / totalRespostas) * 100)//.toFixed(0)
 				})).sort((primeiro, segundo) => ordemRotulos.indexOf(primeiro.rotulo) - ordemRotulos.indexOf(segundo.rotulo)); // Ordenação
 
 				// Ordenar os valores dos arrays rotulos e porcentagens
@@ -134,7 +134,6 @@ async function gerarGrafico(dadosFator) {
 								display: false // Remove a legenda
 							},
 							datalabels: {
-								formatter: (val) => val + '%',
 								display: true,
 								color: "#000",
 								anchor: "center",
@@ -147,7 +146,7 @@ async function gerarGrafico(dadosFator) {
 						layout: {
 							padding: {
 								top: 10, // Aumenta o espaço no topo
-								bottom: 30
+								bottom: 10
 							}
 						}
 					}
@@ -165,11 +164,16 @@ async function gerarGrafico(dadosFator) {
 
 				const bufferImagem = await respostaRequisicao.arrayBuffer();
 				const buffer = Buffer.from(bufferImagem);
-				const caminhoImagem = `assets/imagens/grafico_${fator.replace(/\s+/g, '_')}.png`;
+				
+				//const caminhoImagem = `assets/imagens/grafico_${fator.replace(/\s+/g, '_')}.png`;
+				const identificador = Date.now(); // Adiciona um identificador único baseado no timestamp
+				const caminhoImagem = `assets/imagens/grafico_${identificador}_${fator.replace(/\s+/g, '_')}.png`;
+				
 				fs.writeFileSync(caminhoImagem, buffer);
 				caminhosImagens.push(caminhoImagem);
 			}	
-			console.log("✅ Todos os gráficos foram gerados com sucesso!");
+			console.log(`✅ Gráfico ${numGrafico} gerado com sucesso!`);
+			numGrafico++;
 			return caminhosImagens;
 		} catch (error) {
 

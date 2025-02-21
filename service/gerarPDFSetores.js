@@ -1,8 +1,10 @@
 import pacotePDF from 'pdfkit';
 import fs from 'fs';
+import sizeOf from "image-size";
 import path from 'path';
-import { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque } from './gerarPDF.js';
 import { introducao } from '../conteudo/conteudoPDF.js';
+import { gerarGrafico } from './gerarGraficos.js';
+import { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque } from './gerarPDF.js';
 
 const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 	try {
@@ -35,22 +37,69 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 			pdf.addPage();
 			formatarTextoSetor(pdf, "Setor de trabalho:                        " + `${setor.toUpperCase()}`)
 
+			// Verificar se o setor possui dados
+			if (dadosSetores.length === 0) {
+				console.warn(`O setor ${setor} não possui dados. Pulando...`);
+				continue;
+			}
+
 			for (const escala in dadosSetores[setor]) {
 				espacamentoVertical(pdf, 1);
 				formatarTextoEscala(pdf, escala);
 
 				for (const fator in dadosSetores[setor][escala]) {
-					formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
-					let totalRespostas = 0;
-					dadosSetores[setor][escala][fator].forEach((avaliacao) => {
-						const conteudoResposta = avaliacao.resposta;
-						const quantidadeResposta = avaliacao.quantidade;
-						totalRespostas += quantidadeResposta;
+					
+					// Inserir gráficos do fator
+					const localImagens = await gerarGrafico(dadosSetores[setor][escala][fator], dadosSetores[setor]);
 
-						formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
-					});
-					formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
-					espacamentoVertical(pdf, 1);
+					// POSICIONAMENTO DO GRÁFICO
+					let posicaoX = 50;
+					let posicaoY = pdf.y + 10;
+
+					for (const caminhoImagem of localImagens) {
+						if (pdf.y > 500) {
+							pdf.addPage();
+							posicaoY = pdf.y; // Reinicia a posição Y na nova página
+						}
+						const dimensoes = sizeOf(caminhoImagem);
+						const alturaImagem = dimensoes.height * (400 / dimensoes.width);
+
+						pdf.image(caminhoImagem, posicaoX, posicaoY, { fit: [400, 600] });
+
+						// Atualiza posição Y para o próximo elemento
+						posicaoY += alturaImagem + 5; // Evita sobreposição
+						pdf.y = posicaoY; // Atualiza pdf.y corretamente
+					
+						// POSICIONAMENTO DO TEXTO
+						if (pdf.y > 700) {
+							pdf.addPage();
+							posicaoY = pdf.y; // Reinicia a posição Y na nova página
+						}
+						formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
+						let totalRespostas = 0;
+
+						const ordemRespostas = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
+
+						// Ordenar os dados de acordo com essa ordem
+						dadosSetores[setor][escala][fator].sort((primeira, segunda) => ordemRespostas.indexOf(primeira.resposta) - ordemRespostas.indexOf(segunda.resposta));
+
+						dadosSetores[setor][escala][fator].forEach((avaliacao) => {
+							const conteudoResposta = avaliacao.resposta;
+							const quantidadeResposta = avaliacao.quantidade;
+							totalRespostas += quantidadeResposta;
+
+							formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
+						});
+						formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
+						espacamentoVertical(pdf, 1);
+
+						for (const caminhoImagem of localImagens) {
+							if (fs.existsSync(caminhoImagem)) {
+								fs.unlinkSync(caminhoImagem);
+								console.log(`🗑️ Imagem deletada: ${caminhoImagem}`);
+							}
+						}
+					}
 				}
 			}
 		}
