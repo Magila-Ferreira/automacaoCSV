@@ -14,8 +14,7 @@ const respostas_empresa = `
 			JOIN fator f ON q.id_fator = f.id
 			JOIN escala e ON f.id_escala = e.id
 			WHERE q.id_fator = ?
-			GROUP BY qr.resposta
-			ORDER BY quantidade DESC;`;
+			GROUP BY qr.resposta;`;
 /* ----------> Contabiliza as respostas do setor, por fator <---------- */
 const respostas_setor = `
 			SELECT e.nome AS escala, f.nome AS fator, qr.resposta, COUNT(*) AS quantidade
@@ -26,8 +25,7 @@ const respostas_setor = `
 			JOIN identificacao i ON qr.id_identificacao = i.id
 			WHERE q.id_fator = ?
             AND i.setor = ?
-			GROUP BY qr.resposta
-			ORDER BY quantidade DESC;`;
+			GROUP BY qr.resposta;`;
 const select_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 
 const disponibilizarPDF = async (databaseName) => {
@@ -77,7 +75,7 @@ const disponibilizarPDF = async (databaseName) => {
 			console.warn("\nNenhum dado disponível para o PDF consolidado por setores.");
 			return;
 		}
-
+		
 		// Gerar o PDF consolidado por setor
 		const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
 		console.log(`\nPDF por setor --> gerado e salvo em: ${pdfSetores}`);

@@ -26,6 +26,7 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 		// Primeira página do PDF
 		formatarPrimeiraPagina(pdf,
 			'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS',
+			'RELATÓRIO GERAL - POR EMPRESA',
 			'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase(),
 			introducao
 		);
@@ -79,7 +80,7 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 					}
 				}
 			}
-			
+
 			// POSICIONAMENTO DO TEXTO
 			if (pdf.y > 700) {
 				pdf.addPage();
@@ -87,7 +88,7 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			}
 			formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
 			let totalRespostas = 0;
-			
+
 			// Definir a ordem desejada
 			const ordemRespostas = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
 
@@ -130,11 +131,14 @@ const formatarTextoEscala = (pdf, escala) => {
 const formatarTextoSetor = (pdf, setor) => {
 	pdf.fontSize(14).fillColor('#333').font('Arial-Negrito').text(setor, { align: 'justify' });
 };
-const formatarPrimeiraPagina = (pdf, titulo = null, cabecalho = null, introducao = null) => {
+const formatarPrimeiraPagina = (pdf, titulo, definicao, cabecalho, introducao) => {
 	// TÍTULO
 	pdf.fontSize(16).fillColor('#35a').font('Arial-Negrito').text(titulo, { align: 'center' });
+
+	// DEFINIÇÃO
+	pdf.fontSize(16).fillColor('#000').font('Arial-Negrito').text(definicao, { align: 'center' });
 	espacamentoVertical(pdf, 1);
-	
+
 	// CABEÇALHO DA EMPRESA
 	pdf.fontSize(16).fillColor('#333').font('Arial-Negrito').text(cabecalho, { align: 'justify' });
 	espacamentoVertical(pdf, 1);

@@ -1,0 +1,68 @@
+------------------------ 1. Instalação:
+
+npm install -g node-windows
+npm install node-windows
+
+------------------------ 2. Script
+const { Service } = require('node-windows');
+
+// Criando um novo serviço
+const svc = new Service({
+  name: "AutomacaoNodeJS", // Nome do serviço no Windows
+  description: "Serviço que executa a automação de arquivos em Node.js",
+  script: "C:\\caminho\\para\\seu\\projeto\\index.js", // Caminho do seu script principal
+  nodeOptions: [
+    "--harmony",
+    "--max_old_space_size=4096" // Ajuste para uso de memória se necessário
+  ],
+  wait: 2,
+  grow: 0.5,
+  maxRetries: 3
+});
+
+// Evento de instalação bem-sucedida
+svc.on("install", () => {
+  console.log("Serviço instalado com sucesso!");
+  svc.start(); // Inicia o serviço automaticamente após a instalação
+});
+
+// Instalando o serviço
+svc.install();
+
+------------------------ 3. Executar o script de instalação (no CMD, caminho da pasta raiz)
+
+node installService.js
+
+------------------------ 4. Verificar o serviço em execução
+
+Atalho: Win + R  
+Digite: services.msc
+Procurar por: AutomacaoNodeJS
+
+------------------------ 5. Parar o serviço
+
+sc stop AutomacaoNodeJS
+
+------------------------ 6. Reiniciar o serviço
+
+sc start AutomacaoNodeJS
+
+------------------------ 7. Script para REMOVER o serviço
+
+import { Service } = from 'node-windows';
+
+const svc = new Service({
+  name: "AutomacaoNodeJS"
+});
+
+svc.on("uninstall", () => {
+  console.log("Serviço removido com sucesso!");
+});
+
+svc.uninstall();
+
+------------------------ 8. Executar o script de remoção (no CMD, caminho da pasta raiz) 
+
+node uninstallService.js
+
+

@@ -54,7 +54,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 					data: {
 						labels: rotulosOrdenados,
 						datasets: [{
-							data: porcentagensOrdenadas,
+							data: porcentagensOrdenadas, 
 							backgroundColor: coresDasBarras,
 							borderColor: "white",
 							barThickness: "flex",
@@ -124,7 +124,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 							]
 						},
 						legend: {
-							display: false // Remove a legenda e a caixinha de cor
+							display: false, // Remove a legenda e a caixinha de cor
 						},
 						plugins: {
 							title: {

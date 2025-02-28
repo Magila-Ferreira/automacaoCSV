@@ -29,6 +29,7 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 		// Primeira página do PDF
 		formatarPrimeiraPagina(pdf,
 			'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS',
+			'RELATÓRIO SETORIAL - DADOS SISTEMATIZADOS POR SETORES',
 			'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase(),
 			introducao
 		);
