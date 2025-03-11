@@ -38,14 +38,17 @@ node installService.js
 Atalho: Win + R  
 Digite: services.msc
 Procurar por: AutomacaoNodeJS
+Clicar com o mouse direito: Propriedades
+Aba: Logon
+Ativar: Permitir que o serviço interaja com a área de trabalho
 
 ------------------------ 5. Parar o serviço
 
-sc stop AutomacaoNodeJS
+sc stop automacaonodejs.exe
 
 ------------------------ 6. Reiniciar o serviço
 
-sc start AutomacaoNodeJS
+sc start automacaonodejs.exe
 
 ------------------------ 7. Script para REMOVER o serviço
 
@@ -64,5 +67,3 @@ svc.uninstall();
 ------------------------ 8. Executar o script de remoção (no CMD, caminho da pasta raiz) 
 
 node uninstallService.js
-
-
