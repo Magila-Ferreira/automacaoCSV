@@ -41,25 +41,22 @@ const definirTabelas = async (database, identificacaoCols) => {
             afirmacao VARCHAR(255) NOT NULL,
             id_fator INT NOT NULL,
             FOREIGN KEY (id_fator) REFERENCES fator(id));`;
+		
+		const definirTipoColunaIdentificacao = (col) => { 
+			const tipos = {
+				setor: "VARCHAR(100) NOT NULL",
+				cargo: "VARCHAR(100) NOT NULL",
+				escolaridade: "VARCHAR(100) NOT NULL",
+				estadoCivil: "VARCHAR(100) NOT NULL",
+				genero: "VARCHAR(100) NOT NULL",
+				idade: "INT NOT NULL",
+			};
+			return `\`${col}\` ${tipos[col] || "VARCHAR(100) NOT NULL"}`;
+		};
 
         const create_table_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            ${identificacaoCols.map((col) => {
-                // Define o tipo de dados e atributos para cada coluna
-                switch (col) {
-                    case 'setor':
-                    case 'cargo':
-                    case 'escolaridade':
-                    case 'estadoCivil':
-                    case 'genero':
-                        return `\`${col}\` VARCHAR(100) NOT NULL`;
-                    case 'idade':
-                        return `\`${col}\` INT NOT NULL`;
-                    
-                    default:
-                        return `\`${col}\` TEXT NOT NULL`; // Define o tipo de dados padrão    
-                }
-            }).join(', ')},
+            ${identificacaoCols.map(definirTipoColunaIdentificacao).join(', ')},
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (setor, cargo, idade, escolaridade, estadoCivil, genero));`;
 
