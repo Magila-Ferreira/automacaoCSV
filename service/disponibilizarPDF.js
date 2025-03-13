@@ -2,6 +2,7 @@ import path from 'path';
 import { selecionarDadosPDF } from '../model/consultasBanco.js';
 import { gerarPDF } from './gerarPDF.js';
 import { gerarPDFSetores } from './gerarPDFSetores.js';
+import { alertarFimDoProcesso } from './alertarUsuario.js';
 
 // Agora podemos resolver o caminho de 'pastaSaida'
 const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
@@ -79,6 +80,7 @@ const disponibilizarPDF = async (databaseName) => {
 		// Gerar o PDF consolidado por setor
 		const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
 		console.log(`\nPDF por setor --> gerado e salvo em: ${pdfSetores}`);
+		alertarFimDoProcesso(pastaSaida);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);
 	}
