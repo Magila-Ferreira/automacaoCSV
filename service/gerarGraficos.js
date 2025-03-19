@@ -40,7 +40,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 
 				// Define a altura dinâmica baseada no número de rótulos
 				const alturaBase = 80; // Altura mínima por barra
-				const alturaMinima = 300; // Altura mínima do gráfico
+				const alturaMinima = 200; // Altura mínima do gráfico
 				const alturaMaxima = 700; // Altura máxima do gráfico
 
 				const alturaDinamica = Math.min(
@@ -73,6 +73,13 @@ async function gerarGrafico(dadosFator, setor = null) {
 						},
 						scales: {
 							xAxes: [{
+								scaleLabel: { 
+									display: true,
+									labelString: "Porcentagem (%)",
+									fontSize: 16,
+									fontColor: "#000",
+									fontStyle: "bold",
+								},
 								ticks: {
 									stacked: true, // Garante que as barras fiquem dentro de um espaço fixo
 									beginAtZero: true,
@@ -91,8 +98,12 @@ async function gerarGrafico(dadosFator, setor = null) {
 								gridLines: { display: false }, // Exibe grade no eixo Y
 							}],
 							yAxes: [{
-								ticks: {
-
+								scaleLabel: { 
+									display: true,
+									labelString: "Respostas", 
+									fontSize: 16,
+									fontColor: "#000",
+									fontStyle: "bold",
 								},
 								gridLines: { display: false }, // Exibe grade no eixo Y
 							}]
@@ -147,7 +158,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 							padding: {
 								top: 10, // Aumenta o espaço no topo
 								bottom: 10
-							}
+							},
 						}
 					}
 				}))}`;
@@ -165,7 +176,6 @@ async function gerarGrafico(dadosFator, setor = null) {
 				const bufferImagem = await respostaRequisicao.arrayBuffer();
 				const buffer = Buffer.from(bufferImagem);
 				
-				//const caminhoImagem = `assets/imagens/grafico_${fator.replace(/\s+/g, '_')}.png`;
 				const identificador = Date.now(); // Adiciona um identificador único baseado no timestamp
 				const caminhoImagem = `assets/imagens/grafico_${identificador}_${fator.replace(/\s+/g, '_')}.png`;
 				

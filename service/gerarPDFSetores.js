@@ -14,15 +14,6 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 		pdf.registerFont('Arial', './assets/fonts/arial.ttf');
 		pdf.registerFont('Arial-Negrito', './assets/fonts/ARIALNB.TTF');
 
-		// Insere imagem no PDF
-		// -----	pdf.image('background.jpg', 0, 0, { width: doc.page.width, height: doc.page.height });
-
-		// Define o tamanho do cabeçalho
-		// -----	const alturaCabecalho = 200;
-
-		// Definir cor de fundo
-		// -----	pdf.rect(0, 0, pdf.page.width, alturaCabecalho).fill('#def');
-
 		const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
 		pdf.pipe(fluxoEscrita);
 
