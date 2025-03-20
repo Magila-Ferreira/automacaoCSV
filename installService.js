@@ -3,7 +3,7 @@ import { Service } from 'node-windows';
 // Criando um novo serviço
 const svc = new Service({
 	name: "AutomacaoNodeJS", // Nome do serviço no Windows
-	description: "Serviço que executa a automação de arquivos em Node.js",
+	description: "Processamento de arquivos excel e geração de gráficos em PDF",
 	script: "C:\\amb_teste\\servico_windows\\automacao\\index.js", // Caminho do seu script principal
 	nodeOptions: [
 		"--harmony",

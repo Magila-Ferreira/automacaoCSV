@@ -1,7 +1,7 @@
 import { Service } from 'node-windows';
 
 const svc = new Service({
-	name: "AutomacaoNodeJS",
+	name: "automacaonodejs.exe",
 	script: "C:\\amb_teste\\servico_windows\\automacao\\index.js" // Caminho do script usado na instalação
 });
 
