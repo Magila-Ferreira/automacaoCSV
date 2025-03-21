@@ -1,19 +1,14 @@
-import { exec } from 'child_process';
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 const alertarFimDoProcesso = (pastaDestino) => {
-	const mensagem = `echo. && echo Arquivos PDF gerados com sucesso! && echo. && echo Destino dos arquivos: ${pastaDestino} && echo. && echo Pressione ENTER para fechar a janela... && pause >nul && exit`;
-	
-	exec(`start cmd /k "${mensagem}"`, (error, stdout, stderr) => {
-		if (error) {
-			console.error(`Erro ao abrir o CMD: ${error.message}`);
-			return;
-		}
-		if (stderr) {
-			console.error(`Erro: ${stderr}`);
-			return;
-		}
-		console.log(stdout);
-	});
-};
+	//const caminhoDesktop = path.join(os.homedir(), "Desktop", "ALERTA_PDF_GERADO.txt");
+	//const caminhoDesktop = path.join("E:\\OneDrive\\Desktop", "ALERTA_PDF_GERADO.txt");
+	const caminhoDesktop = path.resolve(process.cwd(), '..', 'arquivosPgr', 'ALERTA_PDF_GERADO.txt');
+	const mensagem = `Os arquivos PDF foram gerados com sucesso!\nDestino: ${pastaDestino}\n\nData: ${new Date().toLocaleString()}`;
 
+	fs.writeFileSync(caminhoDesktop, mensagem, "utf-8");
+	console.log("✅ Arquivo de alerta criado na pasta de trabalho: arquivosPgr");
+};
 export { alertarFimDoProcesso };
