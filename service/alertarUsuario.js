@@ -8,4 +8,5 @@ const alertarFimDoProcesso = () => {
 		}
 	});
 };
+
 export { alertarFimDoProcesso };
