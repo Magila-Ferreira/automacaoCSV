@@ -134,7 +134,7 @@ const salvarDados = async (dados, database, colsResposta) => {
                 }
             } 
         }         
-        console.log(`Registros salvos com sucesso: ${database}\n`);
+        console.log(`Registros salvos com sucesso: ${database} \n`);
     } catch (error) {
         console.error(`Erro ao salvar dados. Banco: ${database}. Erro: ${error.message}`);
     } finally {
@@ -152,7 +152,7 @@ const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacao
     if (novosRegistros.length > 0) {
         await salvarDados(novosRegistros, databaseName, colsResposta); // 3. Salvando os novos registros
     } else {
-        console.log(`Não há novos registros para salvar no banco: ${databaseName}`);
+        console.log(`Não há novos registros para salvar no banco: ${databaseName} \n`);
 	}
 	return novosRegistros.length > 0;
 };

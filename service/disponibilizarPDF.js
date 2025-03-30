@@ -2,10 +2,7 @@ import path from 'path';
 import { selecionarDadosPDF } from '../model/consultasBanco.js';
 import { gerarPDF } from './gerarPDF.js';
 import { gerarPDFSetores } from './gerarPDFSetores.js';
-import { alertarFimDoProcesso } from './alertarUsuario.js';
 
-// Agora podemos resolver o caminho de 'pastaSaida'
-const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
 // SLQ
 /* ----------> Contabiliza as respostas da empresa, por fator <---------- */
 const respostas_empresa = `
@@ -29,7 +26,7 @@ const respostas_setor = `
 			GROUP BY qr.resposta;`;
 const select_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 
-const disponibilizarPDF = async (databaseName) => {
+const disponibilizarPDF = async (databaseName, pastaSaida) => {
 	try {
 		// Selecionar dados por empresa
 		const dadosPDF = await selecionarDadosPDF(databaseName, respostas_empresa); 
@@ -55,20 +52,24 @@ const disponibilizarPDF = async (databaseName) => {
 
 		// Gerar o PDF da empresa  
 		const pdfEmpresa = await gerarPDF(dadosPDF, pastaSaida, databaseName); 
-		console.log(`\nPDF da Empresa --> gerado e salvo em: ${pdfEmpresa}`);
+		console.log(`PDF da Empresa --> gerado e salvo em: ${pdfEmpresa} \n`);
 
-		// Organizar os dados por setor ---------------------------------->>>>>>> VERIFICAR acc
-		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acc, [setor, fatores]) => {
-			acc[setor] = {}; 
-			Object.values(fatores).forEach((respostas) => {
-				
-				respostas.forEach((resposta) => {
-					acc[setor][resposta.escala] ??= {};
-					acc[setor][resposta.escala][resposta.fator] ??= [];
-					acc[setor][resposta.escala][resposta.fator].push(resposta);
+		// Organizar os dados por setor 
+		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [setor, fatores]) => {
+			acumulador[setor] = {}; 
+			
+			Object.values(fatores).forEach((respostas) => {	
+				respostas.forEach(({ escala, fator, ...resto }) => {
+					
+					// Iniciar a escala e o fator, caso não existam
+					acumulador[setor][escala] ??= {};
+					acumulador[setor][escala][fator] ??= [];
+
+					// Adicionar a resposta ao fator correspondente
+					acumulador[setor][escala][fator].push({escala, fator, ...resto });
 				});
 			});
-			return acc;
+			return acumulador;
 		}, {});
 
 		// Converter em um único array
@@ -78,9 +79,8 @@ const disponibilizarPDF = async (databaseName) => {
 		}
 		
 		// Gerar o PDF consolidado por setor
-		const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
-		console.log(`\nPDF por setor --> gerado e salvo em: ${pdfSetores}`);
-		alertarFimDoProcesso(pastaSaida);
+		//const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
+		console.log(`PDF por setor --> gerado e salvo em: ${pdfSetores}\n`);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);
 	}

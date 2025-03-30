@@ -72,23 +72,30 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 
 						const ordemRespostas = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
 
-						// Ordenar os dados de acordo com essa ordem
-						dadosSetores[setor][escala][fator].sort((primeira, segunda) => ordemRespostas.indexOf(primeira.resposta) - ordemRespostas.indexOf(segunda.resposta));
+						// Mapear as respostas existentes
+						const mapaDeRespostasSetor = new Map(dadosSetores[setor][escala][fator].map(avaliacao => [
+							avaliacao.resposta,
+							avaliacao.quantidade
+						]));
 
-						dadosSetores[setor][escala][fator].forEach((avaliacao) => {
-							const conteudoResposta = avaliacao.resposta;
-							const quantidadeResposta = avaliacao.quantidade;
-							totalRespostas += quantidadeResposta;
+						// Adicionar respostas com quantidade 0
+						const dadosCompletosSetor = ordemRespostas.map(resposta => ({
+							resposta: resposta,
+							quantidade: mapaDeRespostasSetor.get(resposta) || 0 // Retorna 0 se não houver valor
+						})); 
 
-							formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
+						dadosCompletosSetor.forEach(({ resposta, quantidade }) => {
+							totalRespostas += quantidade;
+
+							formatarTextoConteudo(pdf, `${resposta.charAt(0).toUpperCase() + resposta.slice(1).toLowerCase()} : ${quantidade} respostas`);
 						});
 						formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
 						espacamentoVertical(pdf, 1);
 
+						// Remover imagens temporárias (GRÁFICOS)
 						for (const caminhoImagem of localImagens) {
 							if (fs.existsSync(caminhoImagem)) {
 								fs.unlinkSync(caminhoImagem);
-								console.log(`🗑️ Imagem deletada: ${caminhoImagem}`);
 							}
 						}
 					}

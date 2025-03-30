@@ -73,10 +73,10 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 				posicaoY += alturaImagem + 5; // Evita sobreposição
 				pdf.y = posicaoY; // Atualiza pdf.y corretamente
 
+				// Remover imagens temporárias (GRÁFICOS)
 				for (const caminhoImagem of localImagens) {
 					if (fs.existsSync(caminhoImagem)) {
 						fs.unlinkSync(caminhoImagem);
-						console.log(`🗑️ Imagem deletada: ${caminhoImagem}`);
 					}
 				}
 			}
@@ -89,13 +89,22 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
 			let totalRespostas = 0;
 
-			// Definir a ordem desejada
+			// Definir a ordem dos rótulos
 			const ordemRespostas = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
 
-			// Ordenar os dados de acordo com essa ordem
-			dadosFator.sort((primeira, segunda) => ordemRespostas.indexOf(primeira.resposta) - ordemRespostas.indexOf(segunda.resposta));
+			// Mapear as respostas existentes
+			const mapaDeRespostas = new Map(dadosFator.map(item => [
+				item.resposta,
+				item.quantidade
+			]));
 
-			dadosFator.forEach((avaliacao) => {
+			// Adicionar respostas com quantidade 0
+			const dadosCompletos = ordemRespostas.map(resposta => ({
+				resposta: resposta,
+				quantidade: mapaDeRespostas.get(resposta) || 0 // Retorna 0 se não houver valor
+			}));
+
+			dadosCompletos.forEach((avaliacao) => {
 				const conteudoResposta = avaliacao.resposta;
 				const quantidadeResposta = avaliacao.quantidade;
 				totalRespostas += quantidadeResposta;

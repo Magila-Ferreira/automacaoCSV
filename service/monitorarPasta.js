@@ -3,8 +3,10 @@ import path from 'path';
 import { processarArquivoEntrada } from './lerArquivos.js';
 import { salvarRegistrosNoBanco } from '../model/operacoesBanco.js';
 import { disponibilizarPDF } from './disponibilizarPDF.js';
+import { alertarFimDoProcesso } from './alertarUsuario.js';
 
 const pastaEntrada = path.resolve(process.cwd(), '..', 'arquivosPgr', 'excel_csv');
+const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
 
 // Verifica se o arquivo é válido:
 const isArquivoValido = (filePath) => {
@@ -47,10 +49,11 @@ const inicializarPrograma = () => {
             const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
 			
 			await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
-			await disponibilizarPDF(databaseName);
+			await disponibilizarPDF(databaseName, pastaSaida);
         } catch (err) {
 			console.error(`${err}\n`);
 		}
+		alertarFimDoProcesso(pastaSaida);
     });
     console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
