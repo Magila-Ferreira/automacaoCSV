@@ -5,7 +5,8 @@ import { filtrarRegistrosNovos, recuperarDadosDoBanco } from './consultasBanco.j
 const usuario = 'root'; // Usuário com permissões para criar banco e tabelas
 
 const criarBanco = async (database) => {
-    const conexoes = gerenciadorDeConexoesBD(null, usuario);
+	const conexoes = gerenciadorDeConexoesBD(null, usuario);
+	
     try {
         // SQL
         const create_database = `CREATE DATABASE IF NOT EXISTS \`${database}\`
@@ -23,7 +24,7 @@ const criarBanco = async (database) => {
 const definirTabelas = async (database, identificacaoCols) => {
     try {
         // Reutilizar a conexão para o banco criado
-        const db = gerenciadorDeConexoesBD(database);
+        const db = gerenciadorDeConexoesBD(database, usuario);
 
         // SQL
         const create_table_escala = `CREATE TABLE IF NOT EXISTS escala (
@@ -54,7 +55,7 @@ const definirTabelas = async (database, identificacaoCols) => {
 			return `\`${col}\` ${tipos[col] || "VARCHAR(100) NOT NULL"}`;
 		};
 
-        const create_table_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
+		const create_table_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
             id INT AUTO_INCREMENT PRIMARY KEY,
             ${identificacaoCols.map(definirTipoColunaIdentificacao).join(', ')},
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -146,7 +147,7 @@ const salvarRegistrosNoBanco = async (dadosTratados, databaseName, identificacao
     await criarBanco(databaseName);
 	await definirTabelas(databaseName, identificacaoCols); 
 
-    const dadosBanco = await recuperarDadosDoBanco(databaseName); // 1. Recupera os dados salvos no banco
+    const dadosBanco = await recuperarDadosDoBanco(databaseName, usuario); // 1. Recupera os dados salvos no banco
     const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco); // 2. Verifica se há registros nos arquivos diferentes dos registros do banco
 
     if (novosRegistros.length > 0) {

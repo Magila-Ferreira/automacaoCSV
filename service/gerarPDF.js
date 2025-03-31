@@ -55,24 +55,20 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			// Inserir gráficos do fator
 			const localImagens = await gerarGrafico(dadosFator);
 
-			// POSICIONAMENTO DO GRÁFICO
-			let posicaoX = 50;
-			let posicaoY = pdf.y + 10;
-
+			let posicao = posicaoAtualPDF(pdf);	// Posição atual do PDF
+			
 			for (const caminhoImagem of localImagens) {
-				if (pdf.y > 500) {
-					pdf.addPage();
-					posicaoY = pdf.y; // Reinicia a posição Y na nova página
-				}
+				// POSICIONAMENTO DO GRÁFICO
+				posicao = definePosicao(pdf, 500, posicao);	
+				
 				const dimensoes = sizeOf(caminhoImagem);
 				const alturaImagem = dimensoes.height * (400 / dimensoes.width);
 
-				pdf.image(caminhoImagem, posicaoX, posicaoY, { fit: [400, 600] });
+				pdf.image(caminhoImagem, posicao.x, posicao.y, { fit: [400, 600] });
 
 				// Atualiza posição Y para o próximo elemento
-				posicaoY += alturaImagem + 5; // Evita sobreposição
-				pdf.y = posicaoY; // Atualiza pdf.y corretamente
-
+				atualizaPosicaoY(pdf, posicao, alturaImagem);
+				
 				// Remover imagens temporárias (GRÁFICOS)
 				for (const caminhoImagem of localImagens) {
 					if (fs.existsSync(caminhoImagem)) {
@@ -82,11 +78,9 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			}
 
 			// POSICIONAMENTO DO TEXTO
-			if (pdf.y > 700) {
-				pdf.addPage();
-				posicaoY = pdf.y; // Reinicia a posição Y na nova página
-			}
-			formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
+			posicao = definePosicao(pdf, 750, posicao);
+
+			formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO (quantidade de respostas por categoria):`);
 			let totalRespostas = 0;
 
 			// Definir a ordem dos rótulos
@@ -110,7 +104,7 @@ const gerarPDF = async (dadosPDF, pastaDestino, nomeArquivo) => {
 				totalRespostas += quantidadeResposta;
 
 				// Conteúdo do PDF
-				formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()} : ${quantidadeResposta} respostas`);
+				formatarTextoConteudo(pdf, `${conteudoResposta.charAt(0).toUpperCase() + conteudoResposta.slice(1).toLowerCase()}: ${quantidadeResposta}`);
 			});
 			// Total de respostas por fator
 			formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
@@ -132,13 +126,13 @@ const formatarTextoConteudo = (pdf, conteudo) => {
 };
 const formatarTextoSubTitulo = (pdf, subtitulo) => {
 	pdf.fontSize(10).fillColor('#000').font('Arial-Negrito').text(subtitulo, { width: 380, align: "justify" });
-	espacamentoVertical(pdf, 1);
 };
 const formatarTextoEscala = (pdf, escala) => {
 	pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(escala, { align: 'justify' });
 };
 const formatarTextoSetor = (pdf, setor) => {
 	pdf.fontSize(14).fillColor('#333').font('Arial-Negrito').text(setor, { align: 'justify' });
+	espacamentoVertical(pdf, 1);
 };
 const formatarPrimeiraPagina = (pdf, titulo, definicao, cabecalho, introducao) => {
 	// TÍTULO
@@ -162,4 +156,21 @@ const espacamentoVertical = (pdf, numLinhas) => {
 		espacamento++;
 	} while (espacamento < numLinhas);
 };
-export { gerarPDF, espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque };
+const posicaoAtualPDF = (pdf) => {
+	let x = 50;
+	let y = pdf.y + 10;
+	return { x, y };
+};
+const definePosicao = (pdf, valor, posicao) => {
+	if (pdf.y > valor) {
+		pdf.addPage();
+		posicao.y = pdf.y; // Reinicia a posição Y na nova página
+	}
+	return posicao;
+};
+const atualizaPosicaoY = (pdf, posicao, altura) => {
+	posicao.y += altura + 5; // Evita sobreposição
+	pdf.y = posicao.y; // Atualiza pdf.y corretamente
+};
+
+export { gerarPDF, espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY };

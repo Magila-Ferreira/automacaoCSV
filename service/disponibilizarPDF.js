@@ -79,7 +79,7 @@ const disponibilizarPDF = async (databaseName, pastaSaida) => {
 		}
 		
 		// Gerar o PDF consolidado por setor
-		//const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
+		const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
 		console.log(`PDF por setor --> gerado e salvo em: ${pdfSetores}\n`);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);

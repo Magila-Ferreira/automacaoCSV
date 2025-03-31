@@ -54,17 +54,10 @@ async function gerarGrafico(dadosFator, setor = null) {
 
 				// Define a altura dinâmica baseada no número de rótulos
 				const largura = 600; // Largura do gráfico
-				const alturaBase = 100; // Altura mínima por barra
-				const alturaMinima = 350; // Altura mínima do gráfico
-				const alturaMaxima = 450; // Altura máxima do gráfico
-
-				const alturaDinamica = Math.min(
-					Math.max(rotulosOrdenados.length * alturaBase, alturaMinima),
-					alturaMaxima
-				);
+				const altura= 400; // Altura máxima do gráfico
 
 				// Gerar URL do gráfico com QuickChart
-				const urlGrafico = `https://quickchart.io/chart?width=${largura}&height=${alturaDinamica}&c=${encodeURIComponent(JSON.stringify({
+				const urlGrafico = `https://quickchart.io/chart?width=${largura}&height=${altura}&c=${encodeURIComponent(JSON.stringify({
 					type: "horizontalBar",
 					data: {
 						labels: rotulosOrdenados,
@@ -129,22 +122,22 @@ async function gerarGrafico(dadosFator, setor = null) {
 								{
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 40, borderColor: "#080", borderWidth: 1.5,
 									label: {
-										content: 'BAIXO', enabled: true, position: 'top', backgroundColor: "#0c0", yAdjust: 0,
-										fontSize: 14, // Ajusta o tamanho da fonte
+										content: 'BAIXO', enabled: true, position: 'top', backgroundColor: "#0c0", yAdjust:0,
+										fontSize: 12, // Ajusta o tamanho da fonte
 									}
 								},
 								{
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 60, borderColor: "#fff", borderWidth: 0.0005,
 									label: {
 										content: 'MODERADO', enabled: true, position: 'top', backgroundColor: "#aa0", yAdjust: 0,
-										fontSize: 14,
+										fontSize: 12,
 									}
 								},
 								{
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 80, borderColor: "#a00", borderWidth: 1.5,
 									label: {
-										content: 'ALTO', enabled: true, position: 'top', backgroundColor: "#c00", yAdjust: 0,
-										fontSize: 14,
+										content: 'ALTO', enabled: true, position: 'top', backgroundColor: "#a00", yAdjust: 0,
+										fontSize: 12,
 									}
 								}
 							]

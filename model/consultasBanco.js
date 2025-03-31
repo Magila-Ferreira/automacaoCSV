@@ -1,8 +1,10 @@
 import { gerenciadorDeConexoesBD } from "../config/configBanco.js";
 
+const usuario = "root"; // Usuário com permissões para criar banco e tabelas
+
 // Recuperar os registros do banco
-const recuperarDadosDoBanco = async (database) => {
-	const db = gerenciadorDeConexoesBD(database);
+const recuperarDadosDoBanco = async (database, usuario) => {
+	const db = gerenciadorDeConexoesBD(database, usuario);
 	try {
 		const select_dados_identificacao = `
             SELECT setor, cargo, idade, escolaridade, estadoCivil, genero 
@@ -53,7 +55,7 @@ const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 };
 // Selecionar os dados do banco para salvar no PDF
 const selecionarDadosPDF = async (database, instrucao_select, setor = null) => {
-	const db = gerenciadorDeConexoesBD(database);
+	const db = gerenciadorDeConexoesBD(database, usuario);
 
 	// Verificar se a instrucao_select é select_setores
 	if (instrucao_select.trim().toLowerCase().startsWith("select distinct setor")) {

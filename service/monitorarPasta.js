@@ -43,8 +43,8 @@ const inicializarPrograma = () => {
 
             // Verifica correspondência entre as colunas do arquivo e as colunas da tabela 'identificacao'
             if (!compativelBanco(nomeSeisColunasArquivo)) 
-                return console.error(`As colunas do arquivo '${databaseName}' são incompatíveis com a tabela 'identificacao'.\n`);
-
+				return console.error(`As colunas do arquivo '${databaseName}' são incompatíveis com a tabela 'identificacao'.\n`);
+			
 			const nomeRestanteColunasArquivo = Object.keys(dadosTratados[0]).slice(6); 
             const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
 			

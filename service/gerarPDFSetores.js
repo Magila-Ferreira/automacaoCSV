@@ -4,7 +4,7 @@ import sizeOf from "image-size";
 import path from 'path';
 import { introducao } from '../conteudo/conteudoPDF.js';
 import { gerarGrafico } from './gerarGraficos.js';
-import { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque } from './gerarPDF.js';
+import { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY } from './gerarPDF.js';
 
 const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 	try {
@@ -36,38 +36,34 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 			}
 
 			for (const escala in dadosSetores[setor]) {
-				espacamentoVertical(pdf, 1);
+				let posicao = posicaoAtualPDF(pdf);	// Posição atual do PDF
+				posicao = definePosicao(pdf, 500, posicao);	// Define a posição de escrita da ESCALA
+				
 				formatarTextoEscala(pdf, escala);
 
 				for (const fator in dadosSetores[setor][escala]) {
-					
 					// Inserir gráficos do fator
 					const localImagens = await gerarGrafico(dadosSetores[setor][escala][fator], dadosSetores[setor]);
 
-					// POSICIONAMENTO DO GRÁFICO
-					let posicaoX = 50;
-					let posicaoY = pdf.y + 10;
-
+					// Verifica a posição de escrita do arquivo - antes do GRÁFICO
+					posicao = posicaoAtualPDF(pdf);
+					
 					for (const caminhoImagem of localImagens) {
-						if (pdf.y > 500) {
-							pdf.addPage();
-							posicaoY = pdf.y; // Reinicia a posição Y na nova página
-						}
+						// Reinicia o posicionamento, se necessário, para caber o GRÁFICO
+						posicao = definePosicao(pdf, 500, posicao);
+						
 						const dimensoes = sizeOf(caminhoImagem);
 						const alturaImagem = dimensoes.height * (400 / dimensoes.width);
 
-						pdf.image(caminhoImagem, posicaoX, posicaoY, { fit: [400, 600] });
+						pdf.image(caminhoImagem, posicao.x, posicao.y, { fit: [400, 600] });
 
-						// Atualiza posição Y para o próximo elemento
-						posicaoY += alturaImagem + 5; // Evita sobreposição
-						pdf.y = posicaoY; // Atualiza pdf.y corretamente
+						// Atualiza a posição Y após o gráfico
+						atualizaPosicaoY(pdf, posicao, alturaImagem);
 					
 						// POSICIONAMENTO DO TEXTO
-						if (pdf.y > 700) {
-							pdf.addPage();
-							posicaoY = pdf.y; // Reinicia a posição Y na nova página
-						}
-						formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO: `);
+						posicao = definePosicao(pdf, 750, posicao);
+
+						formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO (quantidade de respostas por categoria):`);
 						let totalRespostas = 0;
 
 						const ordemRespostas = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
@@ -87,9 +83,9 @@ const gerarPDFSetores = async (dadosSetores, pastaDestino, nomeArquivo) => {
 						dadosCompletosSetor.forEach(({ resposta, quantidade }) => {
 							totalRespostas += quantidade;
 
-							formatarTextoConteudo(pdf, `${resposta.charAt(0).toUpperCase() + resposta.slice(1).toLowerCase()} : ${quantidade} respostas`);
+							formatarTextoConteudo(pdf, `${resposta.charAt(0).toUpperCase() + resposta.slice(1).toLowerCase()}: ${quantidade}`);
 						});
-						formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
+						formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR SETOR/FATOR: ${totalRespostas}`);
 						espacamentoVertical(pdf, 1);
 
 						// Remover imagens temporárias (GRÁFICOS)
