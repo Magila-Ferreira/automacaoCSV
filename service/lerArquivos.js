@@ -2,49 +2,62 @@ import fs from 'fs';
 import Papa from 'papaparse';
 import xlsx from 'node-xlsx';
 
-// Função para processar o arquivo
-const processarArquivo = (filePath) => {
-    // Leitura de arquivos CSV
-    if (filePath.endsWith('.csv')) {
-        const conteudo = fs.readFileSync(filePath, 'utf-8');
-        const resultado = Papa.parse(conteudo, {
-            header: true,
-            skipEmptyLines: true,
-            delimiter: ';',
-        });
-        if (resultado.errors.length > 0) {
-            console.error("Erro na leitura do CSV: ", resultado.errors);
-            return [];
-        }
-        return resultado.data;
-
-    // Leitura de arquivos Excel 
-    } else if (filePath.endsWith('.xlsx')) {
-        const conteudoExcel = xlsx.parse(filePath);
-
-        if (conteudoExcel.length === 0 || conteudoExcel[0].data.length === 0) {
-            console.error(`Arquivo VAZIO:    ${filePath}.`);
-            return [];
-        }
-
-		const cabecalho = conteudoExcel[0].data[0]; // Define a primeira linha como cabeçalho
-        const linhas = conteudoExcel[0].data.slice(1); // Define as demais linhas como dados
-
-        // Transforma as linhas do array dados em objetos
-        const dados = linhas.map(linha => {
-            const objetoDados = {}; // Cria um objeto vazio
-            
-            cabecalho.forEach((coluna, index) => { // Dispõe as linhas sob o cabeçalho
-                objetoDados[coluna] = linha[index] || null; // Define a chave e o valor do objeto
-            });
-            return objetoDados; 
-		});
-        return dados; 
-    } else {
-        console.error("Formato de arquivo inválido!");
-        return [];
-    };
+const processarArquivo = async (filePath) => {
+	try {
+		// Determina o tipo de arquivo e processa de acordo
+		if (filePath.endsWith('.csv')) {
+			return await processarCSV(filePath);
+		} else if (filePath.endsWith('.xlsx')) {
+			return processarExcel(filePath);
+		} else {
+			console.error("Formato de arquivo inválido:", filePath);
+			return [];
+		}
+	} catch (erro) {
+		console.error("Erro ao processar arquivo:", erro.message);
+		return [];
+	}
 };
+
+// Função para processar arquivos CSV
+const processarCSV = async (filePath) => {
+	try {
+		const conteudo = await fs.promises.readFile(filePath, 'utf-8');
+		const resultado = Papa.parse(conteudo, {
+			header: true,
+			skipEmptyLines: true,
+			delimiter: ';',
+		});
+
+		if (resultado.errors.length > 0) {
+			console.error("Erro na leitura do CSV:", resultado.errors);
+			return [];
+		}
+		return resultado.data;
+	} catch (erro) {
+		console.error("Erro ao ler CSV:", erro.message);
+		return [];
+	}
+};
+
+// Função para processar arquivos Excel
+const processarExcel = (filePath) => {
+	try {
+		const conteudo = xlsx.parse(filePath);
+
+		if (!conteudo.length || !conteudo[0].data.length) {
+			console.error(`Arquivo VAZIO: ${filePath}.`);
+			return [];
+		}
+
+		const [cabecalho, ...linhas] = conteudo[0].data;
+		return linhas.map(linha => Object.fromEntries(cabecalho.map((coluna, index) => [coluna, linha[index] || null])));
+	} catch (erro) {
+		console.error("Erro ao ler Excel:", erro.message);
+		return [];
+	}
+};
+
 // Filtra os dados duplicados [se houver] no próprio arquivo, antes de tentar inserir no banco
 const filtrarRegistrosDublicados = (dadosArquivo) => {
 	const registrosUnicos = new Set();
@@ -81,7 +94,10 @@ const tratarCamposVazios = (item) => {
     return item;
 };
 const processarArquivoEntrada = async (filePath) => {
-    const dadosArquivo = processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto 
+	const dadosArquivo = await processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto
+	
+	console.log(`Arquivo processado: ${dadosArquivo}`);
+
     if (dadosArquivo.length === 0) {
         throw new Error(`Arquivo VAZIO:     ${filePath}`);
 	}
