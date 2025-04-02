@@ -1,7 +1,6 @@
-import path from 'path';
 import { selecionarDadosPDF } from '../model/consultasBanco.js';
-import { gerarPDF } from './gerarPDF.js';
-import { gerarPDFSetores } from './gerarPDFSetores.js';
+import { pdfDaEmpresa } from './pdfEmpresa.js';
+import { pdfPorSetor } from './pdfSetor.js';
 
 // SLQ
 /* ----------> Contabiliza as respostas da empresa, por fator <---------- */
@@ -29,12 +28,12 @@ const select_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;
 const disponibilizarPDF = async (databaseName, pastaSaida) => {
 	try {
 		// Selecionar dados por empresa
-		const dadosPDF = await selecionarDadosPDF(databaseName, respostas_empresa); 
+		const dadosPDF = await selecionarDadosPDF(databaseName, respostas_empresa);
 
 		// Selecionar os setores
 		const setores = await selecionarDadosPDF(databaseName, select_setores);
-		const setoresDaEmpresa = setores.map((item) => item.setor);	
-				
+		const setoresDaEmpresa = setores.map((item) => item.setor);
+
 		// Dados por cada setor
 		const dadosPDF_porSetor = {};
 		for (const setor of setoresDaEmpresa) {
@@ -42,31 +41,31 @@ const disponibilizarPDF = async (databaseName, pastaSaida) => {
 		}
 
 		// Verificar se há dados para gerar o PDF
-		const empresaSemDados = Object.values(dadosPDF).flat().length === 0; 
+		const empresaSemDados = Object.values(dadosPDF).flat().length === 0;
 		const setoresSemDados = Object.values(dadosPDF_porSetor).every(obj => Object.values(obj).flat().length === 0);
 
-		if (empresaSemDados && setoresSemDados) { 
+		if (empresaSemDados && setoresSemDados) {
 			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${databaseName}`);
 			return;
 		};
 
 		// Gerar o PDF da empresa  
-		const pdfEmpresa = await gerarPDF(dadosPDF, pastaSaida, databaseName); 
+		const pdfEmpresa = await pdfDaEmpresa(dadosPDF, pastaSaida, databaseName);
 		console.log(`PDF da Empresa --> gerado e salvo em: ${pdfEmpresa} \n`);
 
 		// Organizar os dados por setor 
 		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [setor, fatores]) => {
-			acumulador[setor] = {}; 
-			
-			Object.values(fatores).forEach((respostas) => {	
+			acumulador[setor] = {};
+
+			Object.values(fatores).forEach((respostas) => {
 				respostas.forEach(({ escala, fator, ...resto }) => {
-					
+
 					// Iniciar a escala e o fator, caso não existam
 					acumulador[setor][escala] ??= {};
 					acumulador[setor][escala][fator] ??= [];
 
 					// Adicionar a resposta ao fator correspondente
-					acumulador[setor][escala][fator].push({escala, fator, ...resto });
+					acumulador[setor][escala][fator].push({ escala, fator, ...resto });
 				});
 			});
 			return acumulador;
@@ -77,10 +76,10 @@ const disponibilizarPDF = async (databaseName, pastaSaida) => {
 			console.warn("\nNenhum dado disponível para o PDF consolidado por setores.");
 			return;
 		}
-		
+
 		// Gerar o PDF consolidado por setor
-		const pdfSetores = await gerarPDFSetores(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
-		console.log(`PDF por setor --> gerado e salvo em: ${pdfSetores}\n`);
+		const pdfSetor = await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
+		console.log(`PDF por setor --> gerado e salvo em: ${pdfSetor}\n`);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);
 	}
