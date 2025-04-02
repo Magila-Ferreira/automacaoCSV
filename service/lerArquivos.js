@@ -58,23 +58,6 @@ const processarExcel = (filePath) => {
 	}
 };
 
-// Filtra os dados duplicados [se houver] no próprio arquivo, antes de tentar inserir no banco
-const filtrarRegistrosDublicados = (dadosArquivo) => {
-	const registrosUnicos = new Set();
-	
-	return dadosArquivo.filter(item => {
-
-        // Armazena uma linha do arquivo
-		const registro = `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
-		
-		if (registrosUnicos.has(registro)) {
-            return false; // Ignora registro duplicado
-        }
-		registrosUnicos.add(registro); // Insere o registro em registrosUnicos
-		
-        return true;
-    });
-};
 // Preenche os campos vazios com "Não informado"
 const tratarCamposVazios = (item) => {
     // Valor padrão dos atributos vazios
@@ -83,9 +66,11 @@ const tratarCamposVazios = (item) => {
         default: 'NÃO INFORMADO',
     };
     // Preencher os valores padrão
-    Object.keys(item).forEach((key) => {
+	Object.keys(item).forEach((key) => {
+		const chaveEmMinusculas = key.toLowerCase();
+
         // Tratamento para idade
-        if (key === 'idade') {
+        if (chaveEmMinusculas === 'idade') {
             item[key] = parseInt(item[key], 10) || valorPadrao.idade;
         } else {
             item[key] = item[key] || valorPadrao.default;
@@ -95,15 +80,7 @@ const tratarCamposVazios = (item) => {
 };
 const processarArquivoEntrada = async (filePath) => {
 	const dadosArquivo = await processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto
-	
-	console.log(`Arquivo processado: ${dadosArquivo}`);
-
-    if (dadosArquivo.length === 0) {
-        throw new Error(`Arquivo VAZIO:     ${filePath}`);
-	}
-	
-	// Se o arquivo Excel tiver ID, procedimento desnecessário
-    const dadosUnicos = filtrarRegistrosDublicados(dadosArquivo); // Desconsidera os registros duplicados no arquivo
-    return dadosUnicos.map(tratarCamposVazios); // Trata os campos vazios
+    if (dadosArquivo.length === 0) throw new Error(`Arquivo VAZIO:     ${filePath}`);
+    return dadosArquivo.map(tratarCamposVazios); // Trata os campos vazios
 };
 export { processarArquivoEntrada };
