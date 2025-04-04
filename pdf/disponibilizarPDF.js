@@ -23,21 +23,21 @@ const respostas_setor = `
 			WHERE q.id_fator = ?
             AND i.setor = ?
 			GROUP BY qr.resposta;`;
-const select_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
+const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 
-const disponibilizarPDF = async (databaseName, pastaSaida) => {
+const disponibilizarPDF = async (nomeDoBanco, pastaSaida) => {
 	try {
 		// Selecionar dados por empresa
-		const dadosPDF = await selecionarDadosPDF(databaseName, respostas_empresa);
-
+		const dadosPDF = await selecionarDadosPDF(nomeDoBanco, respostas_empresa);
+		
 		// Selecionar os setores
-		const setores = await selecionarDadosPDF(databaseName, select_setores);
-		const setoresDaEmpresa = setores.map((item) => item.setor);
-
+		const setores = await selecionarDadosPDF(nomeDoBanco, selecionar_setores); // Objeto com chave
+		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
+		
 		// Dados por cada setor
 		const dadosPDF_porSetor = {};
 		for (const setor of setoresDaEmpresa) {
-			dadosPDF_porSetor[setor] = await selecionarDadosPDF(databaseName, respostas_setor, setor);
+			dadosPDF_porSetor[setor] = await selecionarDadosPDF(nomeDoBanco, respostas_setor, setor);
 		}
 
 		// Verificar se há dados para gerar o PDF
@@ -45,12 +45,12 @@ const disponibilizarPDF = async (databaseName, pastaSaida) => {
 		const setoresSemDados = Object.values(dadosPDF_porSetor).every(obj => Object.values(obj).flat().length === 0);
 
 		if (empresaSemDados && setoresSemDados) {
-			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${databaseName}`);
+			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${nomeDoBanco}`);
 			return;
 		};
 
 		// Gerar o PDF da empresa  
-		const pdfEmpresa = await pdfDaEmpresa(dadosPDF, pastaSaida, databaseName);
+		const pdfEmpresa = await pdfDaEmpresa(dadosPDF, pastaSaida, nomeDoBanco);
 		console.log(`PDF da Empresa --> gerado e salvo em: ${pdfEmpresa} \n`);
 
 		// Organizar os dados por setor 
@@ -78,7 +78,7 @@ const disponibilizarPDF = async (databaseName, pastaSaida) => {
 		}
 
 		// Gerar o PDF consolidado por setor
-		const pdfSetor = await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${databaseName}_Setores`);
+		const pdfSetor = await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDoBanco}_Setores`);
 		console.log(`PDF por setor --> gerado e salvo em: ${pdfSetor}\n`);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);

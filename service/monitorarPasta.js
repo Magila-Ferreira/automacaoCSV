@@ -2,11 +2,21 @@ import chokidar from 'chokidar';
 import path from 'path';
 import { processarArquivoEntrada } from './lerArquivos.js';
 import { salvarRegistrosNoBanco } from '../model/operacoesBanco.js';
-import { disponibilizarPDF } from './disponibilizarPDF.js';
+import { disponibilizarPDF } from '../pdf/disponibilizarPDF.js';
 import { alertarFimDoProcesso } from './alertarUsuario.js';
 
-const pastaEntrada = path.resolve(process.cwd(), '..', 'arquivosPgr', 'excel_csv');
-const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
+// Verifica se o nome do banco é válido e o higieniza
+const higienizaNomeDoBanco = (filePath) => {
+	if (!filePath || typeof filePath !== "string" || !filePath.trim()) {
+		return "analise_pgr"; // Nome padrão em caso de erro
+	}
+
+	let name = path.basename(filePath.trim(), path.extname(filePath.trim()));
+
+	// Substituir caracteres inválidos e garantir um nome válido
+	name = name.replace(/[^a-zA-Z0-9_]/g, "_").substring(0, 64) || "analise_pgr";
+	return name;
+}; 
 
 // Verifica se o arquivo é válido:
 const isArquivoValido = (filePath) => {
@@ -15,45 +25,35 @@ const isArquivoValido = (filePath) => {
         && (filePath.endsWith('.csv') || filePath.endsWith('.xlsx')) // Se for csv ou xlsx
     );
 };
-// Verifica compatibilidade entre as colunas do arquivo e as colunas da tabela 'identificacao'
-const compativelBanco = (nomeSeisColunasArquivo) => {
-    return (nomeSeisColunasArquivo.map(coluna => coluna.toLowerCase()).join('-') === 'setor-cargo-idade-escolaridade-estadocivil-genero');
-};
 
 const inicializarPrograma = () => {
+	const pastaEntrada = path.resolve(process.cwd(), '..', 'arquivosPgr', 'excel_csv');
+	const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
+
+	// Define o nome das colunas (banco)
+	const identificacaoCols = ['id', 'setor', 'cargo', 'idade', 'escolaridade', 'estadoCivil', 'genero']; // Tabela 'identificacao'
+	const questao_respostaCols = Array.from({ length: 46 }, (_, i) => `q${i + 1}`); // Tabela 'questao_resposta'
+
     console.log("\n-----------------------------------------------------------------------------------------------\n");
     console.log("PROGRAMA INICIADO COM SUCESSO!!!");
 
     chokidar.watch(pastaEntrada, { persistent: true, ignored: /(^|[/\\])~\$.*/ }).on('add', async (filePath) => { 
-        console.log("MONITORANDO PASTA...");
+		const nomeDoBanco = higienizaNomeDoBanco(filePath); // Define o nome do banco (nome do arquivo ou nome padro)
+		console.log("MONITORANDO PASTA...");
         
         try {
             if (!isArquivoValido(filePath)) return;
             console.log(`ARQUIVO VÁLIDO ENCONTRADO --> ${filePath}`);
 
             const dadosTratados = await processarArquivoEntrada(filePath);
-            console.log("ARQUIVO PROCESSADO!\n");
-            const databaseName = path.basename(filePath, path.extname(filePath)); // Define o nome do banco, conforme nome do arquivo sem extensão
-            
-            if (!databaseName) throw new Error("Nome inválido para o banco de dados.");
-
-            // Define nome das colunas da tabela 'identificacao'
-			const nomeSeisColunasArquivo = Object.keys(dadosTratados[0]).slice(0, 6);
-			const identificacaoCols = nomeSeisColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
-
-            // Verifica correspondência entre as colunas do arquivo e as colunas da tabela 'identificacao'
-            if (!compativelBanco(nomeSeisColunasArquivo)) 
-				return console.error(`As colunas do arquivo '${databaseName}' são incompatíveis com a tabela 'identificacao'.\n`);
-			
-			const nomeRestanteColunasArquivo = Object.keys(dadosTratados[0]).slice(6); 
-            const colsResposta = nomeRestanteColunasArquivo.map(coluna => coluna.toLowerCase()); // Converte para minúsculas
-			
-			await salvarRegistrosNoBanco(dadosTratados, databaseName, identificacaoCols, colsResposta);
-			await disponibilizarPDF(databaseName, pastaSaida);
+			console.log("ARQUIVO PROCESSADO!\n");
+            			
+			await salvarRegistrosNoBanco(dadosTratados, nomeDoBanco, identificacaoCols, questao_respostaCols);
+			await disponibilizarPDF(nomeDoBanco, pastaSaida);
         } catch (err) {
 			console.error(`${err}\n`);
 		}
-		alertarFimDoProcesso(pastaSaida);
+		alertarFimDoProcesso(pastaSaida); // FIM								
     });
     console.log("\n-----------------------------------------------------------------------------------------------\n");
 };

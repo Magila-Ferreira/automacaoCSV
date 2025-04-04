@@ -1,6 +1,6 @@
 import { criarPDF, adicionarGraficoAoPDF, adicionaInformacoesDoGrafico } from './gerarPDF.js';
 import { formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, posicaoAtualPDF, definePosicao, espacamentoVertical } from './formatacaoPDF.js';
-import { introducao } from '../conteudo/conteudoPDF.js';
+import { introducao } from '../conteudoEstatico/introducaoPDF.js';
 
 const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo) => {
 	try {
@@ -9,13 +9,13 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo) => {
 			'RELATÓRIO SETORIAL - DADOS SISTEMATIZADOS POR SETORES',
 			'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase(),
 			introducao);
-		
+
 		for (const setor in dadosSetores) {
 			pdf.addPage();
 			formatarTextoSetor(pdf, `Setor de trabalho:                        ${setor.toUpperCase()}`);
-			
+
 			if (dadosSetores.length === 0) continue; // Verifica se o setor possui dados
-			
+
 			for (const escala in dadosSetores[setor]) {
 				let posicao = posicaoAtualPDF(pdf);	// Posição atual do PDF
 				posicao = definePosicao(pdf, 500, posicao);	// Define a posição de escrita da ESCALA

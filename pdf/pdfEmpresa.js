@@ -1,6 +1,6 @@
 import { criarPDF, adicionarGraficoAoPDF, adicionaInformacoesDoGrafico } from './gerarPDF.js';
 import { formatarPrimeiraPagina, formatarTextoEscala } from './formatacaoPDF.js';
-import { introducao } from '../conteudo/conteudoPDF.js';
+import { introducao } from '../conteudoEstatico/introducaoPDF.js';
 
 const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo) => {
 	try {
@@ -9,7 +9,7 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo) => {
 			'RELATÓRIO GERAL - POR EMPRESA',
 			'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase(),
 			introducao);
-		
+
 		for (let iFator = 1; iFator <= 10; iFator++) {
 			const dadosFator = dadosPDF[`fator_${iFator}`] ?? [];
 			if (dadosFator.length === 0) continue;
@@ -25,6 +25,7 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo) => {
 					}
 				}
 			});
+
 			let posicao = await adicionarGraficoAoPDF(pdf, dadosFator);
 			await adicionaInformacoesDoGrafico(pdf, dadosFator, posicao);
 		}

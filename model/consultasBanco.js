@@ -1,28 +1,28 @@
 import { gerenciadorDeConexoesBD } from "../config/configBanco.js";
 
-const usuario = "root"; // Usuário com permissões para criar banco e tabelas
+const usuario = 'root'; // Usuário com todas as permissões para operar o banco
 
 // Recuperar os registros do banco
-const recuperarDadosDoBanco = async (database, usuario) => {
-	const db = gerenciadorDeConexoesBD(database, usuario);
+const recuperarDadosDoBanco = async (nomeDoBanco, usuario) => {
+	const seleciona_dados_identificacao = `SELECT id, setor, cargo, idade, escolaridade, estadoCivil, genero 
+            FROM identificacao ORDER BY id ASC;`;
+
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
 	try {
-		const select_dados_identificacao = `
-            SELECT setor, cargo, idade, escolaridade, estadoCivil, genero 
-            FROM identificacao`;
+		const [retorno_sql] = await db.query(seleciona_dados_identificacao);
 
-		const [rows] = await db.query(select_dados_identificacao);
+		if (!retorno_sql || retorno_sql.length === 0) { return [] };
 
-		if (!rows || rows.length === 0) {
-			return [];
-		}
-		return rows.map((row) => ({
-			setor: row.setor?.trim(),
-			cargo: row.cargo?.trim(),
-			idade: parseInt(row.idade, 10),
-			escolaridade: row.escolaridade?.trim(),
-			estadoCivil: row.estadoCivil?.trim(),
-			genero: row.genero?.trim(),
+		return retorno_sql.map((linha_retorno_sql) => ({
+			id: parseInt(linha_retorno_sql.id, 10),
+			setor: linha_retorno_sql.setor?.trim(),
+			cargo: linha_retorno_sql.cargo?.trim(),
+			idade: parseInt(linha_retorno_sql.idade, 10),
+			escolaridade: linha_retorno_sql.escolaridade?.trim(),
+			estadoCivil: linha_retorno_sql.estadoCivil?.trim(),
+			genero: linha_retorno_sql.genero?.trim(),
 		}));
+
 	} catch (error) {
 		console.error(`Erro ao recuperar dados: ${error.message}`);
 		return [];
@@ -32,49 +32,40 @@ const recuperarDadosDoBanco = async (database, usuario) => {
 };
 // Verificar quais dados do arquivo não estão registrados no banco
 const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
+
 	// Converte os registros do banco em um Set de string JSON (para comparação)
 	const registrosBanco = new Set(
-		dadosBanco.map(
-			(item) =>
-				`${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(
-					item.idade,
-					10
-				)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`
-		)
-	);
+		dadosBanco.map((item) => `${parseInt(item.id, 10)}-${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`));
 
-	// Filtra os dados que não estão no banco
+	// Filtra e armazena os dados que não estão no banco
 	return dadosArquivo.filter((item) => {
-		const registroArquivo = `${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(
-			item.idade,
-			10
-		)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
-
+		const registroArquivo = `${parseInt(item.id, 10)}-${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
 		return !registrosBanco.has(registroArquivo); // Retorna os registros que não estão no banco
 	});
 };
-// Selecionar os dados do banco para salvar no PDF
-const selecionarDadosPDF = async (database, instrucao_select, setor = null) => {
-	const db = gerenciadorDeConexoesBD(database, usuario);
 
-	// Verificar se a instrucao_select é select_setores
-	if (instrucao_select.trim().toLowerCase().startsWith("select distinct setor")) {
-		const [rows] = await db.query(instrucao_select);
-		return rows;
+// Selecionar os dados do banco para salvar no PDF
+const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+
+	// Verificar se a instrucao_sql é selecionar_setores
+	if (instrucao_sql.trim().toLowerCase().startsWith("select distinct setor")) {
+		const [setores] = await db.query(instrucao_sql);
+		return setores;
 	}
 
 	let resultados = {};
 	try {
 		for (let fator = 1; fator <= 10; fator++) {
 			let parametros = setor ? [fator, setor] : [fator]; // Adicionar setor aos parâmetros
-			const [rows] = await db.query(instrucao_select, parametros);
+			const [retorno_sql] = await db.query(instrucao_sql, parametros);
 
-			resultados[`fator_${fator}`] = rows.map(row => ({
-				escala: row.escala,
-				fator: row.fator,
-				resposta: row.resposta,
-				quantidade: row.quantidade,
-				setor: row.setor || setor, 
+			resultados[`fator_${fator}`] = retorno_sql.map(linha_retorno_sql => ({
+				escala: linha_retorno_sql.escala,
+				fator: linha_retorno_sql.fator,
+				resposta: linha_retorno_sql.resposta,
+				quantidade: linha_retorno_sql.quantidade,
+				setor: linha_retorno_sql.setor || setor,
 			}));
 		};
 		return resultados;

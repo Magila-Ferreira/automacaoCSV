@@ -28,7 +28,7 @@ const formatarPrimeiraPagina = (pdf, titulo, definicao, cabecalho, introducao) =
 	espacamentoVertical(pdf, 1);
 
 	// TEXTO
-	pdf.fontSize(12).fillColor('#555').font('Arial').text(introducao, { align: 'justify' });
+	pdf.fontSize(11).fillColor('#555').font('Arial').text(introducao, { align: 'justify' });
 }
 const espacamentoVertical = (pdf, numLinhas) => {
 	let espacamento = 0;

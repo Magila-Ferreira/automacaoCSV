@@ -1,5 +1,6 @@
 import fs from "fs";
 import fetch from "node-fetch";
+import { normalizarRespostas, calcularTotalRespostas, ordemRotulos } from "../normatizacao/respostas.js"; //-----> Continuar 
 
 let numGrafico = 1;
 // Função para gerar gráfico de barras horizontal com QuickChart
@@ -7,7 +8,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 
 	// Agrupar dados por fator
 	const fatoresAgrupados = {};
-
+	
 	dadosFator.forEach(({ fator, resposta, quantidade }) => {
 		if (!fatoresAgrupados[fator]) fatoresAgrupados[fator] = [];
 		fatoresAgrupados[fator].push({ resposta, quantidade });
@@ -21,30 +22,16 @@ async function gerarGrafico(dadosFator, setor = null) {
 		try {
 			const caminhosImagens = [];
 
-			const ordemRotulos = ["nunca", "raramente", "às vezes", "frequentemente", "sempre"];
-			
 			for (const [fator, respostas] of Object.entries(fatoresAgrupados)) {
+				const respostasCompletas = normalizarRespostas(respostas);
+				const totalRespostas = calcularTotalRespostas(respostasCompletas);
 				
-				// Mapeia as respostas existentes no fator
-				const mapaDeRespostas = new Map(respostas.map(respostaItem => [
-					respostaItem.resposta,
-					respostaItem.quantidade
-				]));
-
-				// Adicionar respostas com quantidade 0
-				const respostasCompletas = ordemRotulos.map(rotulo => ({
-					resposta: rotulo,
-					quantidade: mapaDeRespostas.get(rotulo) || 0 // Retorna 0 se não houver valor
-				}));
-
-				const totalRespostas = respostasCompletas.reduce((acumulador, valorAtual) => acumulador + valorAtual.quantidade, 0);
-
 				// Ordena os dados de acordo com os rotulosOrdenados e calcula sua porcentagem
-				const dadosOrdenados = respostasCompletas.map((respostaItem) => ({
-					rotulo: respostaItem.resposta,
-					porcentagem: totalRespostas > 0 ? Math.round((respostaItem.quantidade / totalRespostas) * 100) : 0
+				const dadosOrdenados = respostasCompletas.map(({ resposta, quantidade }) => ({
+					rotulo: resposta,
+					porcentagem: totalRespostas > 0 ? Math.round((quantidade / totalRespostas) * 100) : 0
 				}));
-
+				
 				// Ordenar os valores dos arrays rotulos e porcentagens
 				const rotulosOrdenados = dadosOrdenados.map(dado => dado.rotulo);
 				const porcentagensOrdenadas = dadosOrdenados.map(dado => dado.porcentagem);
