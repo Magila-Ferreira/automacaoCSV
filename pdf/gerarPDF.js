@@ -8,7 +8,7 @@ import { normalizarRespostas } from '../normatizacao/respostas.js';
 
 const criarPDF = (pastaDestino, nomeArquivo) => {
 	const pdf = new pacotePDF({ size: 'A4' });
-	const caminhoArquivoPDF = path.join(pastaDestino, `${nomeArquivo}.pdf`);
+	const caminhoArquivoPDF = path.join(pastaDestino, `Relatorio Operacional ${nomeArquivo}.pdf`);
 	pdf.registerFont('Arial', './assets/fonts/arial.ttf');
 	pdf.registerFont('Arial-Negrito', './assets/fonts/ARIALNB.TTF');
 	const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
