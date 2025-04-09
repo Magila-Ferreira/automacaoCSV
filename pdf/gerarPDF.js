@@ -33,7 +33,9 @@ const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) 
 		const alturaImagem = dimensoes.height * (400 / dimensoes.width); // Calcula a altura da imagem
 		pdf.image(caminhoImagem, posicao.x, posicao.y, { fit: [400, 600] }); // Insere imagem do gráfico
 		atualizaPosicaoY(pdf, posicao, alturaImagem);
-		await deletarImagens(caminhoImagem);
+		while (caminhoImagem.length > 0) { 
+			await deletarImagens(caminhoImagem);
+		}
 	}
 	return posicao;
 };
