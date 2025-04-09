@@ -2,13 +2,14 @@ import pacotePDF from 'pdfkit';
 import fs from 'fs';
 import sizeOf from "image-size";
 import path from 'path';
-import { gerarGrafico } from '../service/gerarGraficos.js';
+import { gerarGrafico } from '../operacional/gerarGraficos.js';
+import { gerarGraficosGerenciais } from '../gerencial/gerarGraficosGerenciais.js';
 import { formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY } from './formatacaoPDF.js';
 import { normalizarRespostas } from '../normatizacao/respostas.js';
 
-const criarPDF = (pastaDestino, nomeArquivo) => {
+const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
 	const pdf = new pacotePDF({ size: 'A4' });
-	const caminhoArquivoPDF = path.join(pastaDestino, `Relatorio Operacional ${nomeArquivo}.pdf`);
+	const caminhoArquivoPDF = path.join(pastaDestino, `${tipoRelatorio} - ${nomeArquivo}.pdf`);
 	pdf.registerFont('Arial', './assets/fonts/arial.ttf');
 	pdf.registerFont('Arial-Negrito', './assets/fonts/ARIALNB.TTF');
 	const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
@@ -16,8 +17,14 @@ const criarPDF = (pastaDestino, nomeArquivo) => {
 	return { pdf, caminhoArquivoPDF };
 };
 
-const adicionarGraficoAoPDF = async (pdf, dados, setor = null) => {
-	const localImagens = await gerarGrafico(dados, setor);
+const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) => {
+	let localImagens = [];
+
+	if (tipoRelatorio === "RELATÓRIO GERENCIAL") {
+		localImagens = await gerarGraficosGerenciais(dados, setor);
+	} else {
+		localImagens = await gerarGrafico(dados, setor);
+	}	
 	let posicao = posicaoAtualPDF(pdf);
 
 	for (const caminhoImagem of localImagens) {
@@ -50,10 +57,24 @@ const adicionaInformacoesDoGrafico = async (pdf, dados, posicao) => {
 	formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
 };
 
+const adicionaInformacoesDoGraficoGerencial = async (pdf, dados, posicao) => {
+	posicao = definePosicao(pdf, 800, posicao); // Define a posição do texto
+	formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO - porcentagem de risco psicossocial por fator:`);
+
+	// Itera sobre o conteúdo e quantidade das respostas completas
+	dados.forEach(({ fator, porcentagem_risco }) => {
+		formatarTextoConteudo(
+			pdf,
+			`${fator.charAt(0).toUpperCase() + fator.slice(1).toLowerCase()}: ${porcentagem_risco}%`
+		);
+	});
+	atualizaPosicaoY(pdf, posicao, 70);
+};
+
 async function deletarImagens(caminhoImagem) {
 	// Aguarda o PDF processar a imagem antes de excluir
 	setImmediate(() => fs.unlink(caminhoImagem, (err) => {
 		if (err) console.error(`Erro ao excluir a imagem ${caminhoImagem}:`, err);
 	}));
 }
-export { criarPDF, adicionarGraficoAoPDF, adicionaInformacoesDoGrafico };
+export { criarPDF, adicionarGrafico, adicionaInformacoesDoGrafico, adicionaInformacoesDoGraficoGerencial };

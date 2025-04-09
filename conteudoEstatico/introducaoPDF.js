@@ -1,5 +1,44 @@
 /* CONTEÚDO DO PDF */
-const texto = `Este relatório foi gerado a partir de arquivos excel, com dados coletados na Análise Preliminar de Riscos Psicossociais. Possui como objetivo sistematizar os dados coletados, com a seguinte estrutura:
+const textoGerencial = `Este relatório foi gerado a partir de um arquivo excel, com dados coletados na Análise Preliminar de Riscos Psicossociais. Os dados coletados foram analizados em quatro escalas e dez fatores, conforme descrição à seguir:
+
+ESCALA 1 - Organização do trabalho
+                    Fator 1. Divisão de tarefas
+                    Fator 2. Divisão social do trabalho
+
+ESCALA 2 - Estilo de gestão
+                    Fator 1. Estilo individualista
+                    Fator 2. Estilo coletivista
+    
+ESCALA 3 - Indicadores de sofrimento no trabalho
+                    Fator 1. Falta de sentido no trabalho
+                    Fator 2. Esgotamento mental
+                    Fator 3. Falta de reconhecimento
+
+ESCALA 4 - Danos relacionados ao trabalho
+                    Fator 1. Danos psicológicos
+                    Fator 2. Danos sociais
+                    Fator 3. Danos físicos
+
+O gráfico representa a porcentagem de risco por fator, calculado da seguinte forma:
+
+Quantidade - soma da quantidade de cada variável de resposta por questão.
+Peso - atribuiu-se um peso a cada variável de resposta, conforme o seguinte critério:
+                    Resposta sem risco: (5)
+                    Resposta com baixo grau de risco: (4)
+                    Resposta intermediária: (3)
+                    Resposta com médio grau de risco: (2)
+                    Resposta com alto grau de risco: (1)
+Ponderação - multiplicou-se a quantidade de cada variável de resposta pelo peso correspondente (quantidade * peso).
+Porcentagem ponderada - cálculo da porcentagem correspondete a cada variável de resposta em relação a totalidade ponderada de respostas por questão (ponderação / total_ponderado * 100).
+Grau de risco por questão - calculado a partir da soma das porcentagens que apresentam grau de risco (peso 1 e 2).
+Grau de risco por fator - calculado a partir da média simples entre as porcentagens de risco das questões que correspondem ao mesmo fator.
+
+OBSERVAÇÃO: a porcentagem que representa o grau de risco por fator, encontra-se arredondada em três casas decimais, com o objetivo de facilitar a leitura do gráfico.
+
+- Entende-se que:
+    As barras do gráfico representam o percentual de risco psicossocial por fator, com base na ponderação das respostas dos colaboradores.`; 
+
+const textoOperacional = `Este relatório foi gerado a partir de um arquivo excel, com dados coletados na Análise Preliminar de Riscos Psicossociais. Possui como objetivo sistematizar os dados coletados, com a seguinte estrutura:
 
 - Os riscos foram analisados em quatro escalas:
     1. Organização do trabalho
@@ -42,6 +81,7 @@ function limparTexto(texto) {
 		.replace(/[ \t]+$/gm, '');
 }
 
-const introducao = limparTexto(texto);
+const introducaoOperacional = limparTexto(textoOperacional);
+const introducaoGerencial = limparTexto(textoGerencial);
 
-export { introducao };
+export { introducaoOperacional, introducaoGerencial };

@@ -1,6 +1,6 @@
 import { escalas, fatores, questoes } from '../conteudoEstatico/insertsEstaticos.js';
 import { gerenciadorDeConexoesBD } from '../config/configBanco.js';
-import { filtrarRegistrosNovos, recuperarDadosDoBanco } from './consultasBanco.js';
+import { filtrarRegistrosNovos, filtrarRegistrosGerenciaisNovos, recuperarDadosDoBanco, recuperarDadosGerenciaisDoBanco } from './consultasBanco.js';
 
 const usuario = 'root'; // Usuário com todas as permissões para operar o banco
 
@@ -62,6 +62,12 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
         resposta VARCHAR(50) NOT NULL,
         FOREIGN KEY (id_identificacao) REFERENCES identificacao(id),
         FOREIGN KEY (id_questao) REFERENCES questao(id));`;
+	
+	const criar_tabela_risco_fator = `CREATE TABLE IF NOT EXISTS risco_fator (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		porcentagem_risco FLOAT NOT NULL,
+		id_fator INT NOT NULL,
+		FOREIGN KEY (id_fator) REFERENCES fator(id));`;
 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Reutiliza a conexão com o banco
 	try {
@@ -71,6 +77,7 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 		await db.query(criar_tabela_questao);
 		await db.query(criar_tabela_identificacao);
 		await db.query(criar_tabela_questao_resposta);
+		await db.query(criar_tabela_risco_fator);
 		db.end();
 		console.log(`Tabelas criadas ou já existentes: ${nomeDoBanco}`);
 	} catch (error) {
@@ -142,6 +149,38 @@ const salvarDados = async (dados, nomeDoBanco, questao_respostaCols) => {
 	}
 };
 
+const salvarDadosGerenciais = async (dados, nomeDoBanco) => { 
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const inserir_risco_fator = `INSERT IGNORE INTO risco_fator(porcentagem_risco, id_fator) VALUES (?, ?)`;
+
+	try {
+		for (const item of dados) {
+			await db.query(inserir_risco_fator, [item.porcentagem_risco, item.id_fator]);
+		}
+		console.log(`Registros salvos na TABELA risco_fator => BANCO: ${nomeDoBanco}\n`);
+	} catch (error) {
+		console.error(`Erro ao salvar dados. Banco: ${nomeDoBanco}. Erro: ${error.message}`);
+	} finally {
+		db.end();
+	}
+};
+
+const atualizarDadosGerenciais = async (dados, nomeDoBanco) => {
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const atualizar = `UPDATE risco_fator SET porcentagem_risco = ? WHERE id_fator = ?`;
+
+	try {
+		for (const item of dados) {
+			await db.query(atualizar, [item.porcentagem_risco, item.id_fator]);
+			console.log(`Atualizado: Fator ${item.id_fator} => ${item.porcentagem_risco}`);
+		}
+	} catch (error) {
+		console.error(`Erro ao atualizar dados. Banco: ${nomeDoBanco}. Erro: ${error.message}`);
+	} finally {
+		db.end();
+	}
+}; 
+
 const salvarRegistrosNoBanco = async (dadosTratados, nomeDoBanco, identificacaoCols, questao_respostaCols) => {
 	// Criar banco
 	await criarBanco(nomeDoBanco);
@@ -153,8 +192,27 @@ const salvarRegistrosNoBanco = async (dadosTratados, nomeDoBanco, identificacaoC
 	if (novosRegistros.length > 0) {
 		await salvarDados(novosRegistros, nomeDoBanco, questao_respostaCols); // 3. Salvando os novos registros
 	} else {
-		console.log(`\nNão há novos registros para salvar no banco: ${nomeDoBanco} \n`);
+		console.log(`\nNão há novos registros OPERACIONAIS para salvar no banco: ${nomeDoBanco}\n`);
 	}
 	return novosRegistros.length > 0;
 };
-export { salvarRegistrosNoBanco };
+
+const salvarRegistrosGerenciais = async (dadosTratados, nomeDoBanco) => { 
+	const dadosBanco = await recuperarDadosGerenciaisDoBanco(nomeDoBanco, usuario); // 1. Recupera risco_fator do banco
+	const registrosDiferentes = filtrarRegistrosGerenciaisNovos(dadosTratados, dadosBanco); // 2. Compara os dados do arquivo com o banco
+
+	if (dadosBanco.length === 0) {
+		await salvarDadosGerenciais(registrosDiferentes, nomeDoBanco);
+		console.log(`Dados inseridos no banco: ${nomeDoBanco} | TABELA: risco_fator\n`);
+		return true;
+	} else if (registrosDiferentes.length > 0) {
+		await atualizarDadosGerenciais(registrosDiferentes, nomeDoBanco);
+		console.log(`Registros atualizados no banco: ${nomeDoBanco} | TABELA: risco_fator\n.`);
+		return true;
+	} else {
+		console.log(`Não há novos registros GERENCIAIS para salvar ou atualizar no banco: ${nomeDoBanco} \n`);
+		return false;
+	}
+};
+
+export { salvarRegistrosNoBanco, salvarRegistrosGerenciais };

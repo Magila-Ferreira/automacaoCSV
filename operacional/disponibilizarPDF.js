@@ -1,3 +1,4 @@
+import { introducaoOperacional } from '../conteudoEstatico/introducaoPDF.js';
 import { selecionarDadosPDF } from '../model/consultasBanco.js';
 import { pdfDaEmpresa } from './pdfEmpresa.js';
 import { pdfPorSetor } from './pdfSetor.js';
@@ -26,14 +27,15 @@ const respostas_setor = `
 const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 
 const disponibilizarPDF = async (nomeDoBanco, pastaSaida) => {
+	let tipoRelatorio = 'RELATÓRIO OPERACIONAL';
 	try {
 		// Selecionar dados por empresa
 		const dadosPDF = await selecionarDadosPDF(nomeDoBanco, respostas_empresa);
-		
+
 		// Selecionar os setores
 		const setores = await selecionarDadosPDF(nomeDoBanco, selecionar_setores); // Objeto com chave
 		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
-		
+
 		// Dados por cada setor
 		const dadosPDF_porSetor = {};
 		for (const setor of setoresDaEmpresa) {
@@ -50,8 +52,8 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida) => {
 		};
 
 		// Gerar o PDF da empresa  
-		const pdfEmpresa = await pdfDaEmpresa(dadosPDF, pastaSaida, nomeDoBanco);
-		console.log(`PDF da Empresa --> gerado e salvo em: ${pdfEmpresa} \n`);
+		const pdfEmpresa = await pdfDaEmpresa(dadosPDF, pastaSaida, `${nomeDoBanco}_Empresa`, tipoRelatorio, introducaoOperacional);
+		console.log(`PDF (Operacional) da Empresa --> gerado e salvo em: ${pdfEmpresa} \n`);
 
 		// Organizar os dados por setor 
 		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [setor, fatores]) => {
@@ -78,8 +80,8 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida) => {
 		}
 
 		// Gerar o PDF consolidado por setor
-		const pdfSetor = await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDoBanco}_Setores`);
-		console.log(`PDF por setor --> gerado e salvo em: ${pdfSetor}\n`);
+		const pdfSetor = await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDoBanco}_Setores`, tipoRelatorio, introducaoOperacional);
+		console.log(`PDF (Operacional) por setor --> gerado e salvo em: ${pdfSetor}\n`);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);
 	}

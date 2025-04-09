@@ -6,7 +6,7 @@ const formatarTextoConteudo = (pdf, conteudo) => {
 	pdf.fontSize(10).fillColor('#335').font('Arial').text(conteudo, { align: 'justify' });
 };
 const formatarTextoSubTitulo = (pdf, subtitulo) => {
-	pdf.fontSize(10).fillColor('#000').font('Arial-Negrito').text(subtitulo, { width: 380, align: "justify" });
+	pdf.fontSize(12).fillColor('#005').font('Arial-Negrito').text(subtitulo, { align: "justify" });
 };
 const formatarTextoEscala = (pdf, escala) => {
 	pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(escala, { align: 'justify' });
@@ -14,6 +14,9 @@ const formatarTextoEscala = (pdf, escala) => {
 const formatarTextoSetor = (pdf, setor) => {
 	pdf.fontSize(14).fillColor('#333').font('Arial-Negrito').text(setor, { align: 'justify' });
 	espacamentoVertical(pdf, 1);
+};
+const formatarDescricaoArquivo = (pdf, escala) => {
+	pdf.fontSize(14).fillColor('#a00').font('Arial-Negrito').text(escala, { align: 'justify' });
 };
 const formatarPrimeiraPagina = (pdf, titulo, definicao, cabecalho, introducao) => {
 	// TÍTULO
@@ -54,4 +57,4 @@ const atualizaPosicaoY = (pdf, posicao, altura) => {
 	pdf.y = posicao.y; // Atualiza pdf.y corretamente
 };
 
-export { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY };
+export { espacamentoVertical, formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY, formatarDescricaoArquivo };

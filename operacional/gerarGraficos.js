@@ -1,10 +1,17 @@
 import fs from "fs";
 import fetch from "node-fetch";
-import { normalizarRespostas, calcularTotalRespostas, ordemRotulos } from "../normatizacao/respostas.js"; //-----> Continuar 
+import { normalizarRespostas, calcularTotalRespostas } from "../normatizacao/respostas.js"; //-----> Continuar 
 
 let numGrafico = 1;
 // Função para gerar gráfico de barras horizontal com QuickChart
 async function gerarGrafico(dadosFator, setor = null) {
+	const tempoRequisicao = 10000;
+	const maximoTentativas = 5;
+	// Define a altura dinâmica baseada no número de rótulos
+	const largura = 600; // Largura do gráfico
+	const altura = 400; // Altura máxima do gráfico
+	let tentativa = 0;
+	const caminhosImagens = [];
 
 	// Agrupar dados por fator
 	const fatoresAgrupados = {};
@@ -14,13 +21,8 @@ async function gerarGrafico(dadosFator, setor = null) {
 		fatoresAgrupados[fator].push({ resposta, quantidade });
 	});
 
-	const tempoRequisicao = 10000;
-	const maximoTentativas = 5;
-
-	let tentativa = 0;
 	while (tentativa < maximoTentativas) {
 		try {
-			const caminhosImagens = [];
 
 			for (const [fator, respostas] of Object.entries(fatoresAgrupados)) {
 				const respostasCompletas = normalizarRespostas(respostas);
@@ -38,10 +40,6 @@ async function gerarGrafico(dadosFator, setor = null) {
 
 				// Definir cores das barras com base na porcentagem
 				const coresDasBarras = porcentagensOrdenadas.map(porcentagem => porcentagem <= 40 ? "#080" : porcentagem <= 80 ? "#cc0" : "#c00");
-
-				// Define a altura dinâmica baseada no número de rótulos
-				const largura = 600; // Largura do gráfico
-				const altura= 400; // Altura máxima do gráfico
 
 				// Gerar URL do gráfico com QuickChart
 				const urlGrafico = `https://quickchart.io/chart?width=${largura}&height=${altura}&c=${encodeURIComponent(JSON.stringify({
@@ -69,7 +67,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 							xAxes: [{
 								scaleLabel: {
 									display: true,
-									labelString: "Porcentagens (%)",
+									labelString: "Valores em Porcentagem (%)",
 									fontSize: 16,
 									fontColor: "#000",
 									fontStyle: "bold",
@@ -104,7 +102,7 @@ async function gerarGrafico(dadosFator, setor = null) {
 							clip: false, // Garante que as annotations fiquem visíveis mesmo fora do container
 							annotations: [
 								{
-									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 0, borderColor: "#555", borderWidth: 1,
+									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 0, borderColor: "#555", borderWidth: 0.5,
 								},
 								{
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 40, borderColor: "#080", borderWidth: 1.5,
