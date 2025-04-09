@@ -33,9 +33,7 @@ const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) 
 		const alturaImagem = dimensoes.height * (400 / dimensoes.width); // Calcula a altura da imagem
 		pdf.image(caminhoImagem, posicao.x, posicao.y, { fit: [400, 600] }); // Insere imagem do gráfico
 		atualizaPosicaoY(pdf, posicao, alturaImagem);
-		while (caminhoImagem.length > 0) { 
-			await deletarImagens(caminhoImagem);
-		}
+		deletarImagens(caminhoImagem);
 	}
 	return posicao;
 };
@@ -73,10 +71,10 @@ const adicionaInformacoesDoGraficoGerencial = async (pdf, dados, posicao) => {
 	atualizaPosicaoY(pdf, posicao, 70);
 };
 
-async function deletarImagens(caminhoImagem) {
+function deletarImagens(caminhoImagem) {
 	// Aguarda o PDF processar a imagem antes de excluir
-	setImmediate(() => fs.unlink(caminhoImagem, (err) => {
+	fs.unlink(caminhoImagem, (err) => {
 		if (err) console.error(`Erro ao excluir a imagem ${caminhoImagem}:`, err);
-	}));
+	});
 }
 export { criarPDF, adicionarGrafico, adicionaInformacoesDoGrafico, adicionaInformacoesDoGraficoGerencial };

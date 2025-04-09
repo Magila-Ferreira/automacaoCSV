@@ -55,7 +55,7 @@ const inicializarPrograma = () => {
 		} catch (err) {
 			console.error(`${err}\n`);
 		}
-		alertarFimDoProcesso(pastaSaida); // FIM								
+		//alertarFimDoProcesso(pastaSaida); // FIM								
 	});
 	console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
