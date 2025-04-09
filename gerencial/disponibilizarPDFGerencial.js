@@ -8,12 +8,12 @@ import { salvarRegistrosGerenciais } from "../model/operacoesBanco.js";
 // SLQ
 // /* ----------> Respostas da empresa agrupadas por questão <---------- */
 const respostasPorQuestao = `
-			SELECT f.id AS fator, qr.id_questao, qr.resposta, COUNT(*) AS quantidade 
-			FROM questao_resposta qr 
-			JOIN questao q ON qr.id_questao = q.id
-			JOIN fator f ON q.id_fator = f.id
-			GROUP BY qr.id_questao, qr.resposta
-			ORDER BY qr.id_questao;
+	SELECT f.id AS fator, qr.id_questao, qr.resposta, COUNT(*) AS quantidade 
+	FROM questao_resposta qr 
+	JOIN questao q ON qr.id_questao = q.id
+	JOIN fator f ON q.id_fator = f.id
+	GROUP BY qr.id_questao, qr.resposta
+	ORDER BY qr.id_questao;
 `;
 const riscoPorFator = ` 
 	SELECT f.nome AS fator, rf.porcentagem_risco, e.nome AS escala, f.id AS id_fator
@@ -21,6 +21,19 @@ const riscoPorFator = `
 	JOIN fator f ON rf.id_fator = f.id
 	JOIN escala e ON f.id_escala = e.id
 	GROUP BY id_fator, rf.porcentagem_risco;
+`;
+const riscoPorFatorSetor = `
+	SELECT f.nome AS fator, f.id AS id_fator,
+		rf.porcentagem_risco,
+		e.nome AS escala,
+		setor
+	FROM fator f
+		JOIN risco_fator rf ON f.id = rf.id_fator
+		JOIN escala e ON f.id_escala = e.id
+		JOIN questao q ON f.id = q.id_fator
+		JOIN questao_resposta qr ON q.id = qr.id_questao
+		JOIN identificacao i ON qr.id_identificacao = i.id
+	GROUP BY id_fator, rf.porcentagem_risco, setor;
 `;
 // /* ----------> Respostas do Setor agrupadas por questão <---------- */
 
@@ -118,20 +131,23 @@ async function calcularRiscoPorFator(dadosGerenciais) {
 			respostasPorQuestao[idQuestao].push(resposta);
 		});
 
-		// Soma das porcentagens com peso 1 e 2, por questão
+		// Soma todas as porcentagens com peso 1 e 2, por questão
 		const somaDasPorcentagensComPesos1e2PorQuestao = [];
 
 		for (const questao in respostasPorQuestao) {
 			const respostas = respostasPorQuestao[questao];
 			const respostasComPeso1e2 = respostas.filter((resposta) => resposta.peso === 1 || resposta.peso === 2);
-
-			if (respostasComPeso1e2.length > 0) {
-				const somaPorcentagens = respostasComPeso1e2.reduce((total, resposta) => total + parseFloat(resposta.porcentagem), 0);
-				somaDasPorcentagensComPesos1e2PorQuestao.push(somaPorcentagens);
-			}
+			const somaPorcentagens = respostasComPeso1e2.reduce((total, resposta) => total + parseFloat(resposta.porcentagem), 0);
+			somaDasPorcentagensComPesos1e2PorQuestao.push(somaPorcentagens);
 		}
-		// Média simples das somas por questão
-		const mediaRisco = somaDasPorcentagensComPesos1e2PorQuestao.length > 0 ? somaDasPorcentagensComPesos1e2PorQuestao.reduce((total, valor) => total + valor, 0) / somaDasPorcentagensComPesos1e2PorQuestao.length : 0;
+
+		// Número de questão no fator
+		const numeroDeQuestoesNoFator = somaDasPorcentagensComPesos1e2PorQuestao.length;
+
+		// Média simples das somas por fator
+		const mediaRisco = somaDasPorcentagensComPesos1e2PorQuestao.length > 0 ? somaDasPorcentagensComPesos1e2PorQuestao.reduce((total, valor) => total + valor, 0) / numeroDeQuestoesNoFator : 0;
+
+		console.log(mediaRisco);
 
 		// Atribuir o risco ao fator
 		agrupamentoPorFator[fator].risco = Number(mediaRisco.toFixed(3));
