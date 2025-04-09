@@ -2,26 +2,25 @@ import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF } from "../mode
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
 import { pdfDaEmpresa } from "./pdfGerencialEmpresa.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
-import { normalizarDadosParaOBanco } from "../normatizacao/dadosGerenciaisEmpresa.js";
+import { normalizarDadosParaOBanco } from "../normatizacao/dadosGerenciais.js";
 import { salvarRegistrosGerenciais } from "../model/operacoesBanco.js";
 
 // SLQ
 // /* ----------> Respostas da empresa agrupadas por questão <---------- */
 const respostasPorQuestao = `
-			SELECT e.nome AS escala, f.id AS fator, qr.id_questao, qr.resposta, COUNT(*) AS quantidade 
+			SELECT f.id AS fator, qr.id_questao, qr.resposta, COUNT(*) AS quantidade 
 			FROM questao_resposta qr 
 			JOIN questao q ON qr.id_questao = q.id
 			JOIN fator f ON q.id_fator = f.id
-			JOIN escala e ON f.id_escala = e.id
 			GROUP BY qr.id_questao, qr.resposta
 			ORDER BY qr.id_questao;
 `;
 const riscoPorFator = ` 
-	SELECT rf.id AS id_risco, f.nome AS fator, rf.porcentagem_risco, e.nome AS escala, f.id AS id_fator
+	SELECT f.nome AS fator, rf.porcentagem_risco, e.nome AS escala, f.id AS id_fator
 	FROM risco_fator rf
 	JOIN fator f ON rf.id_fator = f.id
 	JOIN escala e ON f.id_escala = e.id
-	GROUP BY id_fator, id_risco, rf.porcentagem_risco;
+	GROUP BY id_fator, rf.porcentagem_risco;
 `;
 // /* ----------> Respostas do Setor agrupadas por questão <---------- */
 
@@ -57,7 +56,6 @@ async function acrescentaPesosEPonderacao(dadosGerenciais) {
 			quantidade: item.quantidade,
 			peso: item.peso,
 			ponderacao,
-			escala: item.escala,
 		});
 	});
 	return agrupamentoPorQuestao;
@@ -78,7 +76,6 @@ async function acrescentaPorcentagem(agrupamentoPorQuestao) {
 
 			// Adiciona a porcentagem ao objeto dadosGerenciaisEmpresa
 			dadosGerenciaisEmpresa.push({
-				escala: resposta.escala,
 				fator: questao.fator,
 				questao: Number(idQuestao),
 				resposta: resposta.resposta,

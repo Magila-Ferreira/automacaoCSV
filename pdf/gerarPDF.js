@@ -16,7 +16,6 @@ const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
 	pdf.pipe(fluxoEscrita);
 	return { pdf, caminhoArquivoPDF };
 };
-
 const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) => {
 	let localImagens = [];
 
@@ -37,7 +36,6 @@ const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) 
 	}
 	return posicao;
 };
-
 const adicionaInformacoesDoGrafico = async (pdf, dados, posicao) => {
 	posicao = definePosicao(pdf, 750, posicao); // Define a posição do texto
 	formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO (quantidade de respostas por categoria):`);
@@ -56,7 +54,6 @@ const adicionaInformacoesDoGrafico = async (pdf, dados, posicao) => {
 	// Total de respostas por fator
 	formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
 };
-
 const adicionaInformacoesDoGraficoGerencial = async (pdf, dados, posicao) => {
 	posicao = definePosicao(pdf, 800, posicao); // Define a posição do texto
 	formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO - porcentagem de risco psicossocial por fator:`);
@@ -70,7 +67,6 @@ const adicionaInformacoesDoGraficoGerencial = async (pdf, dados, posicao) => {
 	});
 	atualizaPosicaoY(pdf, posicao, 70);
 };
-
 function deletarImagens(caminhoImagem) {
 	// Aguarda o PDF processar a imagem antes de excluir
 	fs.unlink(caminhoImagem, (err) => {

@@ -8,7 +8,6 @@ function normalizarDadosParaOBanco(dadosGerenciais) {
 			const primeiraResposta = respostas[0];
 
 			dadosNormalizados[fator] = {
-				escala: primeiraResposta.escala,
 				risco: risco
 			};
 		}
