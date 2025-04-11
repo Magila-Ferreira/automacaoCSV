@@ -48,7 +48,7 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 							display: true,
 							text: escala,
 							fontSize: 20,
-							fontColor: "#000",
+							fontColor: "#a00",
 							fontStyle: "bold",  // Estilo da fonte (negrito, itálico, etc.)
 							padding: 20,
 						},
@@ -168,5 +168,4 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 		}
 	}
 }
-
 export { gerarGraficosGerenciais };

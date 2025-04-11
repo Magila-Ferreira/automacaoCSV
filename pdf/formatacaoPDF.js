@@ -9,14 +9,15 @@ const formatarTextoSubTitulo = (pdf, subtitulo) => {
 	pdf.fontSize(12).fillColor('#005').font('Arial-Negrito').text(subtitulo, { align: "justify" });
 };
 const formatarTextoEscala = (pdf, escala) => {
-	pdf.fontSize(14).fillColor('#f00').font('Arial-Negrito').text(escala, { align: 'justify' });
+	pdf.fontSize(14).fillColor('#a00').font('Arial-Negrito').text(escala, { align: 'justify' });
 };
 const formatarTextoSetor = (pdf, setor) => {
 	pdf.fontSize(14).fillColor('#333').font('Arial-Negrito').text(setor, { align: 'justify' });
 	espacamentoVertical(pdf, 1);
 };
-const formatarDescricaoArquivo = (pdf, escala) => {
-	pdf.fontSize(14).fillColor('#a00').font('Arial-Negrito').text(escala, { align: 'justify' });
+const formatarDescricaoArquivo = (pdf, descricaoArquivo) => {
+	pdf.fontSize(14).fillColor('#008').font('Arial-Negrito').text(descricaoArquivo, { align: 'center' });
+	espacamentoVertical(pdf, 2);
 };
 const formatarPrimeiraPagina = (pdf, titulo, definicao, cabecalho, introducao) => {
 	// TÍTULO

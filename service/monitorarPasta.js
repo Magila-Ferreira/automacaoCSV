@@ -46,11 +46,11 @@ const inicializarPrograma = () => {
 			if (!isArquivoValido(filePath)) return;
 			console.log(`ARQUIVO VÁLIDO ENCONTRADO --> ${filePath}`);
 
-			//const dadosTratados = await processarArquivoEntrada(filePath);
+			const dadosTratados = await processarArquivoEntrada(filePath);
 			console.log("ARQUIVO PROCESSADO!\n");
 
-			//await salvarRegistrosNoBanco(dadosTratados, nomeDoBanco, identificacaoCols, questao_respostaCols);
-			//await disponibilizarPDF(nomeDoBanco, pastaSaida);
+			await salvarRegistrosNoBanco(dadosTratados, nomeDoBanco, identificacaoCols, questao_respostaCols);
+			await disponibilizarPDF(nomeDoBanco, pastaSaida);
 			await disponibilizarPDFGerencial(nomeDoBanco, pastaSaida);
 		} catch (err) {
 			console.error(`${err}\n`);

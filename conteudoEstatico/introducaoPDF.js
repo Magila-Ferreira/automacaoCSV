@@ -33,7 +33,7 @@ Porcentagem ponderada - cálculo da porcentagem correspondete a cada variável d
 Grau de risco por questão - calculado a partir da soma das porcentagens que apresentam grau de risco (peso 1 e 2).
 Grau de risco por fator - calculado a partir da média simples entre as porcentagens de risco das questões que correspondem ao mesmo fator.
 
-OBSERVAÇÃO: a porcentagem que representa o grau de risco por fator, encontra-se arredondada em três casas decimais, com o objetivo de facilitar a leitura do gráfico.
+OBSERVAÇÃO: a porcentagem que representa o grau de risco por fator, encontra-se arredondada com uma casas decimais, com o objetivo de facilitar a leitura do gráfico.
 
 - Entende-se que:
     As barras do gráfico representam o percentual de risco psicossocial por fator, com base na ponderação das respostas dos colaboradores.`; 

@@ -147,10 +147,8 @@ async function calcularRiscoPorFator(dadosGerenciais) {
 		// Média simples das somas por fator
 		const mediaRisco = somaDasPorcentagensComPesos1e2PorQuestao.length > 0 ? somaDasPorcentagensComPesos1e2PorQuestao.reduce((total, valor) => total + valor, 0) / numeroDeQuestoesNoFator : 0;
 
-		console.log(mediaRisco);
-
 		// Atribuir o risco ao fator
-		agrupamentoPorFator[fator].risco = Number(mediaRisco.toFixed(3));
+		agrupamentoPorFator[fator].risco = Number(mediaRisco.toFixed(1));
 	}
 	return agrupamentoPorFator;
 };
@@ -171,7 +169,7 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida) => {
 
 		// Salvar risco por fator no banco
 		await salvarRegistrosGerenciais(dadosGerenciais, nomeDoBanco);
-
+		
 		// Selecionar os dados do banco para gerar o PDF Gerencial
 		const dadosGerenciaisEmpresa = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);
 		
