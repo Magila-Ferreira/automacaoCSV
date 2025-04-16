@@ -4,7 +4,7 @@ import xlsx from 'node-xlsx';
 
 const processarArquivo = async (filePath) => {
 	try {
-		// Determina o tipo de arquivo e processa de acordo
+		// Determina o tipo de arquivo e processá-lo
 		if (filePath.endsWith('.csv')) {
 			return await processarCSV(filePath);
 		} else if (filePath.endsWith('.xlsx')) {
@@ -23,6 +23,7 @@ const processarArquivo = async (filePath) => {
 const processarCSV = async (filePath) => {
 	try {
 		const conteudo = await fs.promises.readFile(filePath, 'utf-8');
+
 		const resultado = Papa.parse(conteudo, {
 			header: true,
 			skipEmptyLines: true,
@@ -30,7 +31,7 @@ const processarCSV = async (filePath) => {
 		});
 
 		if (resultado.errors.length > 0) {
-			console.error("Erro na leitura do CSV:", resultado.errors);
+			console.error("Erro no processamento do CSV:", resultado.errors);
 			return [];
 		}
 		return resultado.data;
@@ -138,9 +139,9 @@ const tratarCamposVazios = (item) => {
 	});
     return item;
 };
-const processarArquivoEntrada = async (filePath) => {// Selecionar só os dados que serão utilizados em 'identificacao' e 'questao_resposta'
+const processarArquivoEntrada = async (filePath) => {
 	const dadosArquivo = await processarArquivo(filePath); // Lê o arquivo e retorna os dados como objeto
-	if (dadosArquivo.length === 0) throw new Error(`Arquivo VAZIO:     ${filePath}`);
+	if (dadosArquivo.length === 0) throw new Error(`\t\t\t ARQUIVO VAZIO --> ${filePath}`);
 	const dadosLimpos = limparDados(dadosArquivo);	// Higienização dos dados
 	const dadosSelecionados = await selecionarColunasEFormatarDados(dadosLimpos); // Seleciona os dados para: 'identificacao' e 'questao_resposta' 
     return dadosSelecionados.map(tratarCamposVazios); // Trata os campos vazios

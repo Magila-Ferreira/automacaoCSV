@@ -1,13 +1,13 @@
 import { criarPDF, adicionarGrafico, adicionaInformacoesDoGrafico } from '../pdf/gerarPDF.js';
 import { formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, formatarDescricaoArquivo, posicaoAtualPDF, definePosicao, espacamentoVertical } from '../pdf/formatacaoPDF.js';
 
-const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatorio, introducao) => {
+const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatorio, introducao, nomeDaEmpresa) => {
 	try {
 		const { pdf, caminhoArquivoPDF } = criarPDF(pastaDestino, nomeArquivo, tipoRelatorio);
 
 		const titulo = 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS';
 		const definicao = 'Relatório Operacional - POR SETOR';
-		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase();
+		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
 		const descricaoDoArquivo = "GRÁFICO OPERACIONAL - Porcentagem de RESPOSTAS por opção, em relação ao fator, agrupadas por SETOR.";
 
 		formatarPrimeiraPagina(pdf, titulo,

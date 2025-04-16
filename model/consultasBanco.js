@@ -30,18 +30,39 @@ const recuperarDadosDoBanco = async (nomeDoBanco, usuario) => {
 	}
 };
 
-// Recupera os registros gerenciais do banco
-const recuperarDadosGerenciaisDoBanco = async (nomeDoBanco, usuario) => {
+// Recupera os registros gerenciais do banco - Empresa
+const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, usuario, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
 
-	const seleciona_dados_risco_fator = `SELECT id_fator, porcentagem_risco FROM risco_fator;`;
-	
 	try {
 		// Retorna os registros do banco, se houver
-		const [registrosBanco] = await db.query(seleciona_dados_risco_fator);
+		const [registrosBanco] = await db.query(instrucao_sql);
 		if (!registrosBanco || registrosBanco.length === 0) return [];
 
 		return registrosBanco.map((registro) => ({
+			id_fator: parseInt(registro.id_fator, 10),
+			porcentagem_risco: parseFloat(registro.porcentagem_risco),
+		}));
+
+	} catch (error) {
+		console.error(`Erro ao recuperar dados gerenciais: ${error.message}`);
+		return [];
+	} finally {
+		db.end();
+	}
+}
+
+// Recupera os registros gerenciais do banco
+const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, usuario, instrucao_sql) => {
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
+
+	try {
+		// Retorna os registros do banco, se houver
+		const [registrosBanco] = await db.query(instrucao_sql);
+		if (!registrosBanco || registrosBanco.length === 0) return [];
+
+		return registrosBanco.map((registro) => ({
+			setor: registro.setor,
 			id_fator: parseInt(registro.id_fator, 10),
 			porcentagem_risco: parseFloat(registro.porcentagem_risco),
 		}));
@@ -79,6 +100,23 @@ const filtrarRegistrosGerenciaisNovos = (dadosArquivo, dadosBanco) => {
 	// Retorna os registros diferentes do banco
 	const diferentes = arrayDadosArquivo.filter(item => {
 		const registroBanco = dadosBanco.find(registro => registro.id_fator === item.id_fator);
+		return !registroBanco || registroBanco.porcentagem_risco !== item.porcentagem_risco;
+	});
+	return diferentes;
+};
+
+// Verificar quais dados gerenciais não estão inseridos na tabela risco_fator
+const filtrarRegistrosGerenciaisNovosSetor = (dadosArquivo, dadosBanco) => {
+	// Transforma o  objeto em um array para aplicar o filtro
+	const arrayDadosArquivo = Object.entries(dadosArquivo).map(([idFator, info]) => ({
+		id_fator: parseInt(idFator, 10),
+		porcentagem_risco: parseFloat(info.risco),
+		setor: info.setor,
+	}));
+
+	// Retorna os registros diferentes do banco
+	const diferentes = arrayDadosArquivo.filter(item => {
+		const registroBanco = dadosBanco.find(registro => registro.id_fator === item.id_fator && registro.setor === item.setor);
 		return !registroBanco || registroBanco.porcentagem_risco !== item.porcentagem_risco;
 	});
 	return diferentes;
@@ -143,6 +181,32 @@ const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql) => {
 	}
 };
 
+const selecionarDadosGerenciaisSetor = async (nomeDoBanco, instrucao_sql) => {
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+
+	let resultados = {};
+	try {
+		const [retorno_sql] = await db.query(instrucao_sql);
+
+		resultados = retorno_sql.map(linha_retorno_sql => ({
+			setor: linha_retorno_sql.setor,
+			escala: linha_retorno_sql.escala,
+			id_fator: linha_retorno_sql.id_fator,
+			fator: linha_retorno_sql.fator,
+			questao: linha_retorno_sql.questao,
+			resposta: linha_retorno_sql.resposta,
+			quantidade: linha_retorno_sql.quantidade,
+		}));
+		return resultados;
+
+	} catch (error) {
+		console.error(`Erro ao selecionar dados GERENCIAIS para gerar PDF: ${error.message}`);
+		return {};
+	} finally {
+		db.end();
+	}
+}
+
 // Selecionar dados GERENCIAIS para salvar no PDF
 const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = null) => { 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
@@ -186,10 +250,13 @@ const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = 
 
 export {
 	recuperarDadosDoBanco,
-	recuperarDadosGerenciaisDoBanco,
+	recuperarDadosGerenciaisDaEmpresa,
+	recuperarDadosGerenciaisDoSetor,
 	filtrarRegistrosNovos,
 	filtrarRegistrosGerenciaisNovos,
+	filtrarRegistrosGerenciaisNovosSetor,
 	selecionarDadosPDF, 
 	selecionarDadosGerenciais,
+	selecionarDadosGerenciaisSetor,
 	selecionarDadosGerenciaisPDF,
 };

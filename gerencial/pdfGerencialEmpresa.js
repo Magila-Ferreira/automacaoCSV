@@ -1,13 +1,13 @@
 import { criarPDF, adicionarGrafico, adicionaInformacoesDoGraficoGerencial } from '../pdf/gerarPDF.js';
 import { formatarPrimeiraPagina, formatarDescricaoArquivo } from '../pdf/formatacaoPDF.js';
 
-const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, introducao) => {
+const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, introducao, nomeDaEmpresa) => {
 	try {
 		const { pdf, caminhoArquivoPDF } = criarPDF(pastaDestino, nomeArquivo, tipoRelatorio);
 		
 		const titulo = 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS';
 		const definicao = `Relatório Gerencial - POR EMPRESA`;
-		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeArquivo.charAt(0).toUpperCase() + nomeArquivo.slice(1).toLowerCase();
+		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
 		const descricaoDoArquivo = "GRÁFICO GERENCIAL - Porcentagem de RISCO PSICOSSOCIAL por fator.";
 
 		formatarPrimeiraPagina(pdf, titulo, definicao, cabecalho, introducao);
