@@ -6,8 +6,8 @@ let numGrafico = 1;
 async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 	const tempoRequisicao = 10000;
 	const maximoTentativas = 5;
-	const largura = 800;
-	const altura = 400;
+	const largura = 750;
+	const altura = 450;
 	let tentativa = 0;
 	const caminhosImagens = [];
 
@@ -39,7 +39,7 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 							data: riscos,
 							backgroundColor: corBarra,
 							barThickness: "flex",
-							maxBarThickness: 40
+							maxBarThickness: 50
 						}]
 					},
 					options: {
@@ -96,21 +96,21 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 40, borderColor: "#080", borderWidth: 1.5,
 									label: {
 										content: 'BAIXO', enabled: true, position: 'top', backgroundColor: "#0c0", yAdjust: 0,
-										fontSize: 12, // Ajusta o tamanho da fonte
+										fontSize: 14, // Ajusta o tamanho da fonte
 									}
 								},
 								{
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 60, borderColor: "#cc0", borderWidth: 1.5,
 									label: {
 										content: 'MODERADO', enabled: true, position: 'top', backgroundColor: "#aa0", yAdjust: 0,
-										fontSize: 12,
+										fontSize: 14,
 									}
 								},
 								{
 									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 80, borderColor: "#a00", borderWidth: 1.5,
 									label: {
 										content: 'ALTO', enabled: true, position: 'top', backgroundColor: "#a00", yAdjust: 0,
-										fontSize: 12,
+										fontSize: 14,
 									}
 								}
 							]
@@ -154,7 +154,7 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 				fs.writeFileSync(caminhoImagem, buffer);
 				caminhosImagens.push(caminhoImagem);
 
-				console.log(`✅ Gráfico gerencial(${ numGrafico }) gerado com sucesso!`);
+				console.log(`✅ Gráfico ${ numGrafico } gerado com sucesso!`);
 			};
 			numGrafico++;
 			return caminhosImagens;

@@ -9,7 +9,7 @@ import { normalizarRespostas } from '../normatizacao/respostas.js';
 
 const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
 	const pdf = new pacotePDF({ size: 'A4' });
-	const caminhoArquivoPDF = path.join(pastaDestino, `${tipoRelatorio} - ${nomeArquivo}.pdf`);
+	const caminhoArquivoPDF = path.join(pastaDestino, `${nomeArquivo} - ${tipoRelatorio}.pdf`);
 	pdf.registerFont('Arial', './assets/fonts/arial.ttf');
 	pdf.registerFont('Arial-Negrito', './assets/fonts/ARIALNB.TTF');
 	const fluxoEscrita = fs.createWriteStream(caminhoArquivoPDF);
@@ -19,7 +19,7 @@ const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
 const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) => {
 	let localImagens = [];
 
-	if (tipoRelatorio === "RELATÓRIO GERENCIAL") {
+	if (tipoRelatorio === "RELATÓRIO DO GRAU DE RISCO PONDERADO") {
 		localImagens = await gerarGraficosGerenciais(dados, setor);
 	} else {
 		localImagens = await gerarGrafico(dados, setor);
@@ -30,7 +30,7 @@ const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) 
 		posicao = definePosicao(pdf, 500, posicao); // Define a posição da imagem
 		const dimensoes = sizeOf(caminhoImagem); // Obtém dimensões da imagem
 		const alturaImagem = dimensoes.height * (400 / dimensoes.width); // Calcula a altura da imagem
-		pdf.image(caminhoImagem, posicao.x, posicao.y, { fit: [400, 600] }); // Insere imagem do gráfico
+		pdf.image(caminhoImagem, posicao.x, posicao.y, { fit: [400, 700] }); // Insere imagem do gráfico
 		atualizaPosicaoY(pdf, posicao, alturaImagem);
 		deletarImagens(caminhoImagem);
 	}

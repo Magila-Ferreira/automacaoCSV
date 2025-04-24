@@ -289,7 +289,7 @@ async function calcularRiscoPorSetorEFator(dadosGerenciaisSetor) {
 };
 
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
-	const tipoRelatorio = "RELATÓRIO GERENCIAL";
+	const tipoRelatorio = "RELATÓRIO DO GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
 	try {
 		// Selecionar dados organizados por id_questao
 		let dadosGerenciais = await selecionarDadosGerenciais(nomeDoBanco, respostasPorQuestao);
@@ -331,8 +331,8 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		}
 
 		// Gerar o PDF da empresa
-		const pdfGerencialEmpresa = await pdfDaEmpresa(dadosGerenciaisEmpresa, pastaSaida, `${nomeDoBanco}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
-		console.log(`PDF GERENCIAL da Empresa --> gerado e salvo com sucesso!\n`);
+		await pdfDaEmpresa(dadosGerenciaisEmpresa, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
+		console.log(`PDF da Empresa (Grau de risco ponderado) --> gerado e salvo com sucesso!\n`);
 
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);

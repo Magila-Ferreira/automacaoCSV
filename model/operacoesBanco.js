@@ -1,3 +1,5 @@
+import { exec } from 'child_process';
+
 import { escalas, fatores, questoes } from '../conteudoEstatico/insertsEstaticos.js';
 import { gerenciadorDeConexoesBD } from '../config/configBanco.js';
 import { filtrarRegistrosNovos, filtrarRegistrosGerenciaisNovos, filtrarRegistrosGerenciaisNovosSetor, recuperarDadosDoBanco, recuperarDadosGerenciaisDoSetor, recuperarDadosGerenciaisDaEmpresa } from './consultasBanco.js';
@@ -39,7 +41,7 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 
 	const definirTipoColunaIdentificacao = (col) => {
 		const tipos = {
-			id: "INT AUTO_INCREMENT PRIMARY KEY",
+			id: "INT PRIMARY KEY",
 			setor: "VARCHAR(100) NOT NULL",
 			cargo: "VARCHAR(100) NOT NULL",
 			escolaridade: "VARCHAR(100) NOT NULL",
@@ -52,14 +54,14 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 
 	const criar_tabela_identificacao = `CREATE TABLE IF NOT EXISTS identificacao (
         ${identificacaoCols.map(definirTipoColunaIdentificacao).join(', ')},
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE (setor, cargo, idade, escolaridade, estadoCivil, genero));`;
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`;
 
 	const criar_tabela_questao_resposta = `CREATE TABLE IF NOT EXISTS questao_resposta (
         id INT AUTO_INCREMENT PRIMARY KEY,
         id_identificacao INT NOT NULL,
         id_questao INT NOT NULL,
         resposta VARCHAR(50) NOT NULL,
+		UNIQUE (id_identificacao, id_questao),
         FOREIGN KEY (id_identificacao) REFERENCES identificacao(id),
         FOREIGN KEY (id_questao) REFERENCES questao(id));`;
 	
@@ -100,13 +102,14 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 	const inserir_questao = `INSERT IGNORE INTO questao (afirmacao, id_fator) VALUES (?, ?)`;
 
 	const inserir_identificacao = `INSERT IGNORE INTO identificacao 
-        (setor, cargo, idade, escolaridade, estadoCivil, genero) 
-        VALUES (?, ?, ?, ?, ?, ?)`;
-
+        (id, setor, cargo, idade, escolaridade, estadoCivil, genero) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)`;
+	
 	const inserir_questao_resposta = `INSERT IGNORE INTO questao_resposta 
         (id_identificacao, id_questao, resposta) VALUES (?, ?, ?)`;
-
+	
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+
 	try {
 		// Insere dados na tabela escala
 		for (const escala of Object.values(escalas)) {
@@ -126,13 +129,12 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 
 		// Insere os dados na tabela identificação e questao_resposta
 		for (const item of dados) {
-			const valores_identificacao = [item.setor, item.cargo, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];
+			const valores_identificacao = [parseInt(item.id, 10), item.setor, item.cargo, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];
 
 			// Insere na tabela 'identificação' caso não exista
 			const [result] = await db.query(inserir_identificacao, valores_identificacao);
-			const id_identificacao = result.insertId || (result.length > 0 ? result[0].id : null);
+			const id_identificacao = parseInt(item.id, 10); // Usa o id original do item
 
-			// VERIFICAÇÃO ADICIONAL:
 			if (id_identificacao) {
 
 				// Insere as respostas associadas ao id_identificacao

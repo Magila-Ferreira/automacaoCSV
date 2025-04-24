@@ -78,16 +78,25 @@ const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, usuario, instrucao_s
 // Verificar quais dados do arquivo não estão registrados no banco
 const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 
-	// Converte os registros do banco em um Set de string JSON (para comparação)
-	const registrosBanco = new Set(
-		dadosBanco.map((item) => `${parseInt(item.id, 10)}-${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`));
+	// Converte o id do banco para um conjunto numérico (para comparação)
+	const idBanco = new Set(dadosBanco.map((item) => parseInt(item.id, 10)));
 
-	// Filtra e armazena os dados que não estão no banco
-	return dadosArquivo.filter((item) => {
-		const registroArquivo = `${parseInt(item.id, 10)}-${item.setor?.trim()}-${item.cargo?.trim()}-${parseInt(item.idade, 10)}-${item.escolaridade?.trim()}-${item.estadoCivil?.trim()}-${item.genero?.trim()}`;
-		return !registrosBanco.has(registroArquivo); // Retorna os registros que não estão no banco
+	// Filtra os dados que não estão no banco e os retorna
+	const novosRegistros = dadosArquivo.filter((item) => {
+		if (!item.id) return false; // Ignora itens sem id
+
+		// Ignora registros se todos os campos de identificacao forem "NÃO INFORMADO"
+		const camposNaoInformados = [item.setor, item.cargo, item.escolaridade, item.estadoCivil, item.genero];
+		const todosCamposNaoInformados = camposNaoInformados.every(campo => campo === "NÃO INFORMADO");
+		if (todosCamposNaoInformados) return false; 
+
+		const id = parseInt(item.id, 10);
+		if (isNaN(id)) return false;
+		
+		return !idBanco.has(id);
 	});
-};
+	return novosRegistros;
+};  
 
 // Verificar quais dados gerenciais não estão inseridos na tabela risco_fator
 const filtrarRegistrosGerenciaisNovos = (dadosArquivo, dadosBanco) => {

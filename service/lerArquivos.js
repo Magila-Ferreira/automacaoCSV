@@ -77,7 +77,7 @@ const limparDados = (dados) => {
 
 			let valor = item[chave];
 
-			// Tratamento de valores antes de salvar no banco
+			// Tratamento dos valores do arquivo
 			if (typeof valor === 'string') {
 				valor = valor.trim();  // Remove espaços extras
 				if (valor === '') valor = "NÃO INFORMADO";  // Converte strings vazias para default
@@ -133,7 +133,6 @@ const tratarCamposVazios = (item) => {
         if (chaveEmMinusculas === 'idade') {
             item[key] = parseInt(item[key], 10) || valorPadrao.idade;
 		} else {
-			//if (item[key] === null) item[key] = valorPadrao.default;
             item[key] = item[key] || valorPadrao.default;
         }
 	});

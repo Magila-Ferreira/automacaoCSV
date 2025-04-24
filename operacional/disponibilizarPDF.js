@@ -27,7 +27,7 @@ const respostas_setor = `
 const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 
 const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
-	let tipoRelatorio = 'RELATÓRIO OPERACIONAL';
+	let tipoRelatorio = 'RELATÓRIO DA PORCENTAGEM DE RESPOSTAS';
 	try {
 		// Selecionar dados por empresa
 		const dadosPDF = await selecionarDadosPDF(nomeDoBanco, respostas_empresa);
@@ -52,8 +52,8 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 		};
 
 		// Gerar o PDF da empresa  
-		const pdfEmpresa = await pdfDaEmpresa(dadosPDF, pastaSaida, `${nomeDoBanco}_Empresa`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
-		console.log(`PDF OPERACIONAL da Empresa --> gerado e salvo com sucesso!\n`);
+		await pdfDaEmpresa(dadosPDF, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
+		console.log(`PDF da Empresa (% de respostas) --> gerado e salvo com sucesso!\n`);
 
 		// Organizar os dados por setor 
 		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [setor, fatores]) => {
@@ -80,8 +80,8 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 		}
 
 		// Gerar o PDF consolidado por setor
-		const pdfSetor = await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDoBanco}_Setores`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
-		console.log(`PDF OPERACIONAL do setor --> gerado e salvo com sucesso!\n`);
+		await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDaEmpresa}_Setores`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
+		console.log(`PDF por Setor (% de respostas) --> gerado e salvo com sucesso!\n`);
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);
 	}

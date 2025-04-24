@@ -6,9 +6,9 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 		const { pdf, caminhoArquivoPDF } = criarPDF(pastaDestino, nomeArquivo, tipoRelatorio);
 
 		const titulo = 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS';
-		const definicao = 'Relatório Operacional - POR SETOR';
+		const definicao = 'Relatório por setor';
 		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
-		const descricaoDoArquivo = "GRÁFICO OPERACIONAL - Porcentagem de RESPOSTAS por opção, em relação ao fator, agrupadas por SETOR.";
+		const descricaoDoArquivo = "GRÁFICOS DO SETOR - Porcentagem de RESPOSTAS por categoria.";
 
 		formatarPrimeiraPagina(pdf, titulo,
 			definicao, cabecalho, introducao);
