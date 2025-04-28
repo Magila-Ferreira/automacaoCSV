@@ -1,5 +1,5 @@
 import { introducaoOperacional } from '../conteudoEstatico/introducaoPDF.js';
-import { selecionarDadosPDF } from '../model/consultasBanco.js';
+import { selecionarDadosPDF, consultarSetores } from '../model/consultasBanco.js';
 import { pdfDaEmpresa } from './pdfEmpresa.js';
 import { pdfPorSetor } from './pdfSetor.js';
 
@@ -14,6 +14,7 @@ const respostas_empresa = `
 			WHERE q.id_fator = ?
 			GROUP BY qr.resposta;`;
 /* ----------> Contabiliza as respostas do setor, por fator <---------- */
+const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 const respostas_setor = `
 			SELECT e.nome AS escala, f.nome AS fator, qr.resposta, COUNT(*) AS quantidade
 			FROM questao_resposta qr
@@ -24,7 +25,6 @@ const respostas_setor = `
 			WHERE q.id_fator = ?
             AND i.setor = ?
 			GROUP BY qr.resposta;`;
-const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
 
 const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 	let tipoRelatorio = 'RELATÓRIO DA PORCENTAGEM DE RESPOSTAS';
@@ -33,7 +33,7 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 		const dadosPDF = await selecionarDadosPDF(nomeDoBanco, respostas_empresa);
 
 		// Selecionar os setores
-		const setores = await selecionarDadosPDF(nomeDoBanco, selecionar_setores); // Objeto com chave
+		const setores = await consultarSetores(nomeDoBanco, selecionar_setores); // Objeto com chave
 		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
 
 		// Dados por cada setor

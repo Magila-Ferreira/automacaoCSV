@@ -1,4 +1,4 @@
-import { selecionarDadosGerenciais, selecionarDadosGerenciaisSetor, selecionarDadosGerenciaisPDF } from "../model/consultasBanco.js";
+import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF, consultarSetores } from "../model/consultasBanco.js";
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
 import { pdfDaEmpresa } from "./pdfGerencialEmpresa.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
@@ -8,7 +8,7 @@ import { salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor } from "../mo
 // SLQ
 // /* ----------> Respostas da empresa agrupadas por questão <---------- */
 const respostasPorQuestao = `
-	SELECT f.id AS fator, qr.id_questao, qr.resposta, COUNT(*) AS quantidade 
+	SELECT qr.id_questao AS questao, qr.resposta, COUNT(*) AS quantidade, f.id AS fator
 	FROM questao_resposta qr 
 	JOIN questao q ON qr.id_questao = q.id
 	JOIN fator f ON q.id_fator = f.id
@@ -22,22 +22,19 @@ const riscoPorFator = `
 	JOIN escala e ON f.id_escala = e.id
 	GROUP BY id_fator, rf.porcentagem_risco;
 `;
-const respostaPorQuestaoSetor = `
-SELECT f.nome AS fator, f.id AS id_fator,
-	e.nome AS escala,
-    i.setor AS setor,
-	q.id AS questao,
-	qr.resposta AS resposta,
-	COUNT(*) AS quantidade
-FROM fator f
-	JOIN escala e ON f.id_escala = e.id
-	JOIN questao q ON f.id = q.id_fator
-	JOIN questao_resposta qr ON q.id = qr.id_questao
-	JOIN identificacao i ON qr.id_identificacao = i.id
-GROUP BY resposta, questao, setor
-ORDER BY questao, setor;
-`;
 // /* ----------> Respostas do Setor agrupadas por questão <---------- */
+const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
+
+const respostaPorQuestaoSetor = `
+	SELECT qr.id_questao AS questao, qr.resposta AS resposta, COUNT(*) AS quantidade, f.id AS fator, i.setor AS setor
+	FROM questao_resposta qr
+	JOIN questao q ON qr.id_questao = q.id
+	JOIN fator f ON q.id_fator = f.id
+	JOIN identificacao i ON qr.id_identificacao = i.id
+	WHERE i.setor = ?
+	GROUP BY qr.id_questao, qr.resposta, i.setor, f.id
+	ORDER BY qr.id_questao, qr.resposta;
+`;
 async function acrescentaPesosEPonderacao(dadosGerenciais) {
 
 	// Insere a propriedade peso em cada resposta
@@ -81,7 +78,8 @@ async function acrescentaPorcentagem(dadosGerenciais) {
 	// Seção: porcentagem ponderada por questão em dadosGerenciais
 	const dadosGerenciaisQuestao = [];
 
-	Object.entries(dadosGerenciais).forEach(([idQuestao, questao]) => {
+	// Função para processar uma questão e calcular porcentagens
+	const processaQuestao = (idQuestao, questao) => {
 
 		// Cálculo da soma das ponderações
 		const totalPonderacao = questao.respostas.reduce((total, item) => total + item.ponderacao, 0);
@@ -105,212 +103,197 @@ async function acrescentaPorcentagem(dadosGerenciais) {
 				porcentagem: porcentagem.toFixed(3),
 			});
 		});
+	};
+
+	// Detecta se os dados estão agrupados por setor
+	const primeiraChave = Object.keys(dadosGerenciais)[0];
+	const primeiroValor = dadosGerenciais[primeiraChave];
+	const isAgrupadoPorSetor = typeof primeiroValor === 'object' && !('respostas' in primeiroValor);
+
+	// Normaliza estrutura para [ [idQuestao, questao], ... ]
+	let questoesNormalizadas = [];
+
+	if (isAgrupadoPorSetor) {
+		// Desmembra os dados por setor e agrupa todas as questões em um único array
+		Object.values(dadosGerenciais).forEach(questoesSetor => {
+			questoesNormalizadas.push(...Object.entries(questoesSetor));
+		});
+	} else {
+		// Já está no formato esperado
+		questoesNormalizadas = Object.entries(dadosGerenciais);
+	}
+
+	// Processa todas as questões
+	questoesNormalizadas.forEach(([idQuestao, questao]) => {
+		processaQuestao(idQuestao, questao);
 	});
+
 	return dadosGerenciaisQuestao;
 }
-async function calcularRiscoPorFator(dadosGerenciais) {
-	// Agrupar os dados por fator
-	const agrupamentoPorFator = {};
+// Função principal que decide como processar os dados recebidos
+async function calcularRiscoEmpresaOuSetor(dadosGerenciais) {
+	if (!dadosGerenciais) return {};
 
-	dadosGerenciais.forEach((item) => {
+	if (Array.isArray(dadosGerenciais)) {
+		if (dadosGerenciais.length > 0
+			&& typeof dadosGerenciais[0].setor === 'string'
+			&& dadosGerenciais[0].setor.trim() !== "") {
+			
+			// Caso seja dadosGerenciaisSetor (tem setor)
+			return calcularRiscoPorSetor(dadosGerenciais);
+		} else {
+			// Caso seja dadosGerenciais (não tem setor)
+			return calcularRiscoPorEmpresa(dadosGerenciais);
+		}
+	}
+	// Se não for array (por segurança), retorna vazio
+	return {};
+}
+// Para dados da empresa (sem setor): agrupa por fator
+function calcularRiscoPorEmpresa(respostas) {
+	const agrupadoPorFator = {};
+
+	respostas.forEach((item) => {
 		const fator = item.fator;
 
-		if (!agrupamentoPorFator[fator]) {
-			agrupamentoPorFator[fator] = {
+		if (!agrupadoPorFator[fator]) {
+			agrupadoPorFator[fator] = {
 				respostas: [],
-				risco: null,
+				risco: null
 			};
-		};
-		agrupamentoPorFator[fator].respostas.push(item);
+		}
+		agrupadoPorFator[fator].respostas.push(item);
 	});
 
-	// Seleciona as respostas com peso 1 e 2
-	for (const fator in agrupamentoPorFator) {
-		const respostas = agrupamentoPorFator[fator].respostas;
-
-		// Agrupa respostas por questão
-		const respostasPorQuestao = {};
-		respostas.forEach((resposta) => {
-			const idQuestao = resposta.questao;
-			if (!respostasPorQuestao[idQuestao]) {
-				respostasPorQuestao[idQuestao] = [];
-			}
-			respostasPorQuestao[idQuestao].push(resposta);
-		});
-
-		// Soma todas as porcentagens com peso 1 e 2, por questão
-		const somaDasPorcentagensComPesos1e2PorQuestao = [];
-
-		for (const questao in respostasPorQuestao) {
-			const respostas = respostasPorQuestao[questao];
-			const respostasComPeso1e2 = respostas.filter((resposta) => resposta.peso === 1 || resposta.peso === 2);
-			const somaPorcentagens = respostasComPeso1e2.reduce((total, resposta) => total + parseFloat(resposta.porcentagem), 0);
-			somaDasPorcentagensComPesos1e2PorQuestao.push(somaPorcentagens);
-		}
-
-		// Número de questão no fator
-		const numeroDeQuestoesNoFator = somaDasPorcentagensComPesos1e2PorQuestao.length;
-
-		// Média simples das somas por fator
-		const mediaRisco = somaDasPorcentagensComPesos1e2PorQuestao.length > 0 ? somaDasPorcentagensComPesos1e2PorQuestao.reduce((total, valor) => total + valor, 0) / numeroDeQuestoesNoFator : 0;
-
-		// Atribuir o risco ao fator
-		agrupamentoPorFator[fator].risco = Number(mediaRisco.toFixed(3));
+	for (const fator in agrupadoPorFator) {
+		agrupadoPorFator[fator].risco = calcularRisco(agrupadoPorFator[fator].respostas);
 	}
-	return agrupamentoPorFator;
-};
-async function agruparDadosPorSetor(dadosGerenciais) { 
+
+	return agrupadoPorFator;
+}
+// Para dados com setor: agrupa por setor > fator
+function calcularRiscoPorSetor(respostasComSetor) {
 	const agrupadoPorSetor = {};
 
-	Object.entries(dadosGerenciais).forEach(([idQuestao, { fator, respostas }]) => {
-		respostas.forEach(resposta => {
-			const { setor } = resposta;
+	respostasComSetor.forEach(resposta => {
+		const { setor, fator } = resposta;
 
-			// Cria o agrupamento por setor, se não existir
+		if (!agrupadoPorSetor[setor]) {
+			agrupadoPorSetor[setor] = {};
+		}
+
+		if (!agrupadoPorSetor[setor][fator]) {
+			agrupadoPorSetor[setor][fator] = {
+				respostas: [],
+				risco: null
+			};
+		}
+
+		agrupadoPorSetor[setor][fator].respostas.push(resposta);
+	});
+
+	for (const setor in agrupadoPorSetor) {
+		for (const fator in agrupadoPorSetor[setor]) {
+			agrupadoPorSetor[setor][fator].risco = calcularRisco(agrupadoPorSetor[setor][fator].respostas);
+		}
+	}
+	return agrupadoPorSetor;
+}
+// Função utilitária para calcular o risco
+function calcularRisco(respostas) {
+	const respostasPorQuestao = {};
+
+	// Desestruturação das respostas 
+	respostas.forEach(({ questao, peso, porcentagem }) => {
+		if (!respostasPorQuestao[questao]) {
+			respostasPorQuestao[questao] = [];
+		}
+		// Realocação dos pesos e porcentagens na questão (não em cada resposta)
+		respostasPorQuestao[questao].push({ peso, porcentagem });
+	});
+
+	// Soma das porcentagens com peso 1 e 2 em cada questão
+	const somasPorQuestao = Object.values(respostasPorQuestao).map(respostasDaQuestao => {
+		return respostasDaQuestao
+			.filter(resposta => resposta.peso === 1 || resposta.peso === 2) // Filtra as respostas com peso 1 ou 2
+			.reduce((total, { porcentagem }) => total + parseFloat(porcentagem), 0); // Soma as porcentagens das respostas filtradas
+	});
+
+	// Total de questões no fator
+	const totalQuestoes = somasPorQuestao.length;
+
+	if (totalQuestoes === 0) {
+		return 0;
+	}
+
+	// Cálculo da média de risco ponderada: soma as porcentagens com peso 1 e 2 e divide pelo total de questões
+	const media = somasPorQuestao.reduce((total, valor) => total + valor, 0) / totalQuestoes;
+
+	return Number(media.toFixed(3));
+}
+async function agruparDadosPorSetor(dadosGerenciaisSetor) {
+	const agrupadoPorSetor = {}; // Objeto final a ser retornado
+
+	for (const questaoId in dadosGerenciaisSetor) { // Percorre as questões do objeto dadosGerenciaisSetor
+		const { fator, respostas } = dadosGerenciaisSetor[questaoId]; // Desestruturação do objeto
+		// A desistruturação serve para acessar o fator e as respostas diretamente, 
+		// sem precisar dos passsos intermediários, Exemplo: 
+		// fator = dadosGerenciaisSetor[questaoId].fator ou 
+		// respostas = dadosGerenciaisSetor[questaoId].respostas
+
+		// Percorre todas as respostas da questão atual
+		respostas.forEach(resposta => {
+			const setor = resposta.setor; // Obtém o nome do setor associado à resposta
+
+			// Cria o objeto do agrupamento por setor, se ainda não existir
 			if (!agrupadoPorSetor[setor]) {
 				agrupadoPorSetor[setor] = {};
 			}
 
-			// Insere o fator e um agrupamento vazio de respostas dentro dos agrupamentos [setor] => [questão]
-			if (!agrupadoPorSetor[setor][idQuestao]) {
-				agrupadoPorSetor[setor][idQuestao] = {
-					fator,
-					respostas: []
+			// Cria a questão dentro do setor se ainda não existir
+			if (!agrupadoPorSetor[setor][questaoId]) {
+				agrupadoPorSetor[setor][questaoId] = {
+					fator, // Mantém o fator associado à questão
+					respostas: [], // Inicia um array para armazenar as respostas
 				};
 			}
-			// Aloca os dados de resposta dentro do agrupamento vazio de respostas
-			agrupadoPorSetor[setor][idQuestao].respostas.push(resposta);
+			agrupadoPorSetor[setor][questaoId].respostas.push(resposta); // Adiciona a resposta atual ao array de
+			// 																respostas do setor e questão correspondente
 		});
-	});
+	}
 	return agrupadoPorSetor;
-};
-async function acrescentaPorcentagemFatorPorSetor(dadosGerenciaisSetor) {
-	const agrupadoComPorcentagem = {};
-
-	Object.entries(dadosGerenciaisSetor).forEach(([setor, questoes]) => {
-		if (!agrupadoComPorcentagem[setor]) {
-			agrupadoComPorcentagem[setor] = {};
-		}
-
-		Object.entries(questoes).forEach(([idQuestao, questao]) => {
-			if (!Array.isArray(questao.respostas)) return;
-
-			const totalPonderacao = questao.respostas.reduce((total, item) => total + item.ponderacao, 0);
-
-			const respostasComPorcentagem = questao.respostas.map(resposta => {
-				const porcentagem = totalPonderacao > 0
-					? (resposta.ponderacao / totalPonderacao) * 100
-					: 0;
-
-				return {
-					...resposta,
-					porcentagem: porcentagem.toFixed(3)
-				};
-			});
-
-			agrupadoComPorcentagem[setor][idQuestao] = {
-				fator: questao.fator,
-				respostas: respostasComPorcentagem
-			};
-		});
-	});
-	return agrupadoComPorcentagem;
 }
-async function calcularRiscoPorSetorEFator(dadosGerenciaisSetor) { 
-	const agrupado = {};
-
-	// Etapa 1: Agrupar por setor -> fator
-	for (const chave in dadosGerenciaisSetor) {
-		const grupo = dadosGerenciaisSetor[chave];
-
-		for (const subchave in grupo) {
-			const questao = grupo[subchave];
-			const { fator, respostas } = questao;
-
-			respostas.forEach(resposta => {
-				const { setor } = resposta;
-
-				if (!agrupado[setor]) agrupado[setor] = {};
-				if (!agrupado[setor][fator]) {
-					agrupado[setor][fator] = {
-						respostas: [],
-						risco: null
-					};
-				}
-
-				// Supondo que `questao` seja o id da questão para identificação no agrupamento
-				const respostaComId = {
-					...resposta,
-					questao: subchave
-				};
-
-				agrupado[setor][fator].respostas.push(respostaComId);
-			});
-		}
-	}
-
-	// Etapa 2: Calcular risco com base nas respostas agrupadas
-	for (const setor in agrupado) {
-		for (const fator in agrupado[setor]) {
-			const respostas = agrupado[setor][fator].respostas;
-
-			// Agrupar por id da questão
-			const respostasPorQuestao = {};
-			respostas.forEach(resposta => {
-				const idQuestao = resposta.questao;
-				if (!respostasPorQuestao[idQuestao]) {
-					respostasPorQuestao[idQuestao] = [];
-				}
-				respostasPorQuestao[idQuestao].push(resposta);
-			});
-
-			// Soma todas as porcentagens com peso 1 e 2, por questão
-			const somaDasPorcentagensComPesos1e2PorQuestao = [];
-
-			for (const questao in respostasPorQuestao) {
-				const respostasDaQuestao = respostasPorQuestao[questao];
-				const respostasComPeso1e2 = respostasDaQuestao.filter(r => r.peso === 1 || r.peso === 2);
-				const somaPorcentagens = respostasComPeso1e2.reduce((total, r) => total + parseFloat(r.porcentagem), 0);
-				somaDasPorcentagensComPesos1e2PorQuestao.push(somaPorcentagens);
-			}
-
-			const numeroDeQuestoesNoFator = Object.keys(respostasPorQuestao).length;
-
-			const mediaRisco =
-				numeroDeQuestoesNoFator > 0
-					? somaDasPorcentagensComPesos1e2PorQuestao.reduce((total, v) => total + v, 0) / numeroDeQuestoesNoFator
-					: 0;
-
-			agrupado[setor][fator].risco = Number(mediaRisco.toFixed(3));
-		}
-	}
-
-	return agrupado;
-};
 
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 	const tipoRelatorio = "RELATÓRIO DO GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
 	try {
+		// Selecionar os setores
+		const setores = await consultarSetores(nomeDoBanco, selecionar_setores); // Objeto com chave
+		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
+
 		// Selecionar dados organizados por id_questao
 		let dadosGerenciais = await selecionarDadosGerenciais(nomeDoBanco, respostasPorQuestao);
+		let dadosGerenciaisSetor = await selecionarDadosGerenciais(nomeDoBanco, respostaPorQuestaoSetor, setoresDaEmpresa);
 
-		// Selecionar dados organizados por setor
-		let dadosGerenciaisSetor = await selecionarDadosGerenciaisSetor(nomeDoBanco, respostaPorQuestaoSetor);
-		
-		// Sistematiza os dados da EMPRESA para gerar o PDF
+		// Cálculo do risco por fator
 		dadosGerenciais = await acrescentaPesosEPonderacao(dadosGerenciais); // Calcula ponderação
-		dadosGerenciais = await acrescentaPorcentagem(dadosGerenciais); // Calcula porcentagem
-		dadosGerenciais = await calcularRiscoPorFator(dadosGerenciais); // Calcula o risco por fator
+		dadosGerenciais = await acrescentaPorcentagem(dadosGerenciais); // Calcula porcentagem		
+		dadosGerenciais = await calcularRiscoEmpresaOuSetor(dadosGerenciais); // Calcula o risco por fator
 
-		// Sistematiza os dados do SETOR para gerar o PDF
 		dadosGerenciaisSetor = await acrescentaPesosEPonderacao(dadosGerenciaisSetor); // Calcula ponderação		
 		dadosGerenciaisSetor = await agruparDadosPorSetor(dadosGerenciaisSetor); // Agrupa os dados por setor
-		dadosGerenciaisSetor = await acrescentaPorcentagemFatorPorSetor(dadosGerenciaisSetor); // Calcula porcentagem
-		dadosGerenciaisSetor = await calcularRiscoPorSetorEFator(dadosGerenciaisSetor); // Calcula o risco por setor
+		dadosGerenciaisSetor = await acrescentaPorcentagem(dadosGerenciaisSetor); // Calcula porcentagem
+		dadosGerenciaisSetor = await calcularRiscoEmpresaOuSetor(dadosGerenciaisSetor); // Calcula o risco por setor
+
+		//console.log("DADOS EMPRESA APÓS O CÁLCULO DO FATOR ---> ", JSON.stringify(dadosGerenciais, null, 2));
+		//console.log("DADOS SETOR ---> ", JSON.stringify(dadosGerenciaisSetor["Diretoria"][1], null, 2));
 		
+		// Reestruturação dos objetos
+		// 
+
 		// Normalização dos dados gerenciais: EMPRESA e SETOR
 		dadosGerenciais = normalizarDadosParaOBanco(dadosGerenciais);
-		dadosGerenciaisSetor = normalizarDadosSetorParaOBanco(dadosGerenciaisSetor);	
+		//dadosGerenciaisSetor = normalizarDadosSetorParaOBanco(dadosGerenciaisSetor);	
 
 		//console.log(JSON.stringify(dadosGerenciaisSetor, null, 2));
 
@@ -318,11 +301,11 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		await salvarRegistrosGerenciais(dadosGerenciais, nomeDoBanco);
 		// -------------------------------->					ERRO:
 		// await salvarRegistrosGerenciaisSetor(dadosGerenciaisSetor, nomeDoBanco);
-		
+
 		// Selecionar os dados do banco para gerar o PDF Gerencial
 		const dadosGerenciaisEmpresa = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);
 
-		
+
 		// Verificar se há dados para gerar o PDF
 		const empresaSemDados = Object.values(dadosGerenciaisEmpresa).flat().length === 0;
 		if (empresaSemDados) {

@@ -175,7 +175,7 @@ const salvarRegistrosNoBanco = async (dadosTratados, nomeDoBanco, identificacaoC
 	return novosRegistros.length > 0;
 };
 
-// Script Gerencial
+// ------------------------------------------ Gerencial
 const salvarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
 
