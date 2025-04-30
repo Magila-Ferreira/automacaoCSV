@@ -2,7 +2,7 @@ import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF, consultarSetor
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
 import { pdfDaEmpresa } from "./pdfGerencialEmpresa.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
-import { normalizarDadosParaOBanco, normalizarDadosSetorParaOBanco } from "../normatizacao/dadosGerenciais.js";
+import { normalizarDadosEmpresa, normalizarDadosSetor } from "../normatizacao/dadosGerenciais.js";
 import { salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor } from "../model/operacoesBanco.js";
 
 // SLQ
@@ -263,7 +263,6 @@ async function agruparDadosPorSetor(dadosGerenciaisSetor) {
 	}
 	return agrupadoPorSetor;
 }
-
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 	const tipoRelatorio = "RELATÓRIO DO GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
 	try {
@@ -284,23 +283,18 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		dadosGerenciaisSetor = await agruparDadosPorSetor(dadosGerenciaisSetor); // Agrupa os dados por setor
 		dadosGerenciaisSetor = await acrescentaPorcentagem(dadosGerenciaisSetor); // Calcula porcentagem
 		dadosGerenciaisSetor = await calcularRiscoEmpresaOuSetor(dadosGerenciaisSetor); // Calcula o risco por setor
-
-		//console.log("DADOS EMPRESA APÓS O CÁLCULO DO FATOR ---> ", JSON.stringify(dadosGerenciais, null, 2));
-		//console.log("DADOS SETOR ---> ", JSON.stringify(dadosGerenciaisSetor["Diretoria"][1], null, 2));
-		
-		// Reestruturação dos objetos
-		// 
-
+				
 		// Normalização dos dados gerenciais: EMPRESA e SETOR
-		dadosGerenciais = normalizarDadosParaOBanco(dadosGerenciais);
-		//dadosGerenciaisSetor = normalizarDadosSetorParaOBanco(dadosGerenciaisSetor);	
-
-		//console.log(JSON.stringify(dadosGerenciaisSetor, null, 2));
+		dadosGerenciais = normalizarDadosEmpresa(dadosGerenciais);
+		dadosGerenciaisSetor = normalizarDadosSetor(dadosGerenciaisSetor);
 
 		// Salvar risco_fator e risco_setor_fator no banco
 		await salvarRegistrosGerenciais(dadosGerenciais, nomeDoBanco);
-		// -------------------------------->					ERRO:
-		// await salvarRegistrosGerenciaisSetor(dadosGerenciaisSetor, nomeDoBanco);
+		await salvarRegistrosGerenciaisSetor(dadosGerenciaisSetor, nomeDoBanco);
+			
+
+		//console.log("DADOS EMPRESA APÓS O CÁLCULO DO FATOR ---> ", JSON.stringify(dadosGerenciais, null, 2));
+		//console.log(JSON.stringify(dadosGerenciaisSetor, null, 2));
 
 		// Selecionar os dados do banco para gerar o PDF Gerencial
 		const dadosGerenciaisEmpresa = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);

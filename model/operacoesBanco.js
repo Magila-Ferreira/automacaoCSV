@@ -1,5 +1,3 @@
-import { exec } from 'child_process';
-
 import { escalas, fatores, questoes } from '../conteudoEstatico/insertsEstaticos.js';
 import { gerenciadorDeConexoesBD } from '../config/configBanco.js';
 import { filtrarRegistrosNovos, filtrarRegistrosGerenciaisNovos, filtrarRegistrosGerenciaisNovosSetor, recuperarDadosDoBanco, recuperarDadosGerenciaisDoSetor, recuperarDadosGerenciaisDaEmpresa } from './consultasBanco.js';
@@ -94,7 +92,6 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 		console.error("Erro ao criar Tabelas: ", error.message);
 	}
 };
-
 const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 	// SQL --> INSERTS
 	const inserir_escala = `INSERT IGNORE INTO escala (nome) VALUES (?)`;
@@ -158,7 +155,6 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 		db.end();
 	}
 };
-
 const salvarRegistrosNoBanco = async (dadosTratados, nomeDoBanco, identificacaoCols, colunasDasRespostasExcel) => {
 	// Criar banco
 	await criarBanco(nomeDoBanco);
@@ -190,13 +186,11 @@ const salvarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
 		db.end();
 	}
 };
-
 const salvarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
-
 	try {
 		for (const item of dados) {
-			const valores = [item.porcentagem_risco, item.id_fator, item.setor];
+			const valores = [item.porcentagem_risco, item.setor, item.fator];
 			await db.query(instrucao_sql, valores);
 		}
 	} catch (error) {
@@ -205,7 +199,6 @@ const salvarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => 
 		db.end();
 	}
 };
-
 const atualizarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
 
@@ -221,16 +214,22 @@ const atualizarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
 		db.end();
 	}
 }; 
-
 const atualizarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
 
 	try {
-		for (const item of dados) {
-			const valores = [item.porcentagem_risco, item.id_fator, item.setor];
-			await db.query(instrucao_sql, valores);
+		for (const valores of dados) {
+			// valores = [porcentagem_risco, setor, fator]
+			const [porcentagem_risco, setor, fator] = valores;
 
-			console.log(`Atualizado: Setor_Fator ${item.id_fator} => ${item.porcentagem_risco}`);
+			if (
+				typeof fator === 'number' &&
+				typeof setor === 'string' &&
+				typeof porcentagem_risco === 'number'
+			) {
+				await db.query(instrucao_sql, valores);
+				console.log(`Atualizado: Setor: ${setor}, Fator: ${fator}, Risco: ${porcentagem_risco}`);
+			}
 		}
 	} catch (error) {
 		console.error(`Erro ao atualizar dados. Banco: ${nomeDoBanco}. Erro: ${error.message}`);
@@ -238,8 +237,9 @@ const atualizarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) 
 		db.end();
 	}
 };
-
 const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => { 
+	if (!dadosTratadosEmpresa) return console.warn("Não há dados para salvar na tabela risco_fator");
+	
 	const sql_risco_fator = `SELECT id_fator, porcentagem_risco FROM risco_fator;`;
 
 	// 1. Recupera os dados do banco: risco_fator
@@ -252,19 +252,18 @@ const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => {
 	if (dadosBancoEmpresa.length === 0) {
 		const inserir_risco_fator = `INSERT IGNORE INTO risco_fator(porcentagem_risco, id_fator) VALUES (?, ?)`;
 		await salvarDadosGerenciais(registrosDiferentesEmpresa, nomeDoBanco, inserir_risco_fator);
-		console.log(`Dados inseridos no banco: ${nomeDoBanco} | TABELA: risco_fator\n`);
+		console.log(`REGISTROS INSERIDOS NA TABELA: risco_fator, BD ${nomeDoBanco}\n`);
 		return true;
 	} else if (registrosDiferentesEmpresa.length > 0) {
 		const atualizar_risco_fator = `UPDATE risco_fator SET porcentagem_risco = ? WHERE id_fator = ?`;
 		await atualizarDadosGerenciais(registrosDiferentesEmpresa, nomeDoBanco, atualizar_risco_fator);
-		console.log(`Registros atualizados no banco: ${nomeDoBanco} | TABELA: risco_fator\n.`);
+		console.log(`REGISTROS ATUALIZADOS NA TABELA: risco_fator, BD ${nomeDoBanco}\n`);
 		return true;
 	} else {
 		console.log(`Não há novos registros GERENCIAIS DA EMPRESA para salvar ou atualizar no banco: ${nomeDoBanco} \n`);
 		return false;
 	}
 };
-
 const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) => {
 	const sql_risco_setor_fator = `SELECT setor, id_fator, porcentagem_risco FROM risco_setor_fator;`;
 
@@ -275,21 +274,27 @@ const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) =
 	const registrosDiferentesSetor = filtrarRegistrosGerenciaisNovosSetor(dadosTratadosSetor, dadosBancoSetor);
 
 	// 3. Verifica se há novos registros para salvar ou atualizar: em risco_setor_fator
-
 	if (dadosBancoSetor.length === 0) {
 		const inserir_risco_setor_fator = `INSERT IGNORE INTO risco_setor_fator(porcentagem_risco, setor, id_fator) VALUES (?, ?, ?)`;
 		await salvarDadosGerenciaisSetor(registrosDiferentesSetor, nomeDoBanco, inserir_risco_setor_fator);
-		console.log(`Dados inseridos no banco: ${nomeDoBanco} | TABELA: risco_setor_fator\n`);
+		console.log(`REGISTROS INSERIDOS NA TABELA: risco_setor_fator, BD ${nomeDoBanco}\n`);
 		return true;
+
 	} else if (registrosDiferentesSetor.length > 0) {
 		const atualizar_risco_setor_fator = `UPDATE risco_setor_fator SET porcentagem_risco = ? WHERE setor = ? AND id_fator = ?`;
-		await atualizarDadosGerenciaisSetor(registrosDiferentesSetor, nomeDoBanco, atualizar_risco_setor_fator);
-		console.log(`Registros atualizados no banco: ${nomeDoBanco} | TABELA: risco_setor_fator\n.`);
+
+		// Validar os dados antes de executar o UPDATE
+		const atualizaveis = registrosDiferentesSetor.filter(({ setor, fator, porcentagem_risco }) =>
+			typeof setor === 'string' &&
+			typeof fator === 'number' &&
+			typeof porcentagem_risco === 'number'
+		).map(({ setor, fator, porcentagem_risco }) => [porcentagem_risco, setor, fator]);
+		await atualizarDadosGerenciaisSetor(atualizaveis, nomeDoBanco, atualizar_risco_setor_fator);
+		console.log(`REGISTROS ATUALIZADOS NA TABELA: risco_setor_fator, BD ${nomeDoBanco}\n`);
 		return true;
 	} else {
-		console.log(`Não há novos registros GERENCIAIS DO SETOR para salvar ou atualizar no banco: ${nomeDoBanco} \n`);
+		console.log(`Sem alterações necessárias na tabela risco_setor_fator BD: ${nomeDoBanco}.\n`);
 		return false;
 	}
 };
-
 export { salvarRegistrosNoBanco, salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor };

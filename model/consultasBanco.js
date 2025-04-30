@@ -29,7 +29,6 @@ const recuperarDadosDoBanco = async (nomeDoBanco, usuario) => {
 		db.end();
 	}
 };
-
 // Recupera os registros gerenciais do banco - Empresa
 const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, usuario, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
@@ -51,7 +50,6 @@ const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, usuario, instrucao
 		db.end();
 	}
 }
-
 // Recupera os registros gerenciais do banco
 const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, usuario, instrucao_sql) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
@@ -74,7 +72,6 @@ const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, usuario, instrucao_s
 		db.end();
 	}
 }
-
 // Verificar quais dados do arquivo não estão registrados no banco
 const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 
@@ -97,7 +94,6 @@ const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 	});
 	return novosRegistros;
 };  
-
 // Verificar quais dados gerenciais não estão inseridos na tabela risco_fator
 const filtrarRegistrosGerenciaisNovos = (dadosArquivo, dadosBanco) => {
 	// Transforma o  objeto em um array para aplicar o filtro
@@ -113,32 +109,28 @@ const filtrarRegistrosGerenciaisNovos = (dadosArquivo, dadosBanco) => {
 	});
 	return diferentes;
 };
-
 // Verificar quais dados gerenciais não estão inseridos na tabela risco_fator
 const filtrarRegistrosGerenciaisNovosSetor = (dadosArquivo, dadosBanco) => {
-	// Transforma o  objeto em um array para aplicar o filtro
-	const arrayDadosArquivo = Object.entries(dadosArquivo).map(([idFator, info]) => ({
-		id_fator: parseInt(idFator, 10),
-		porcentagem_risco: parseFloat(info.risco),
+	// Mapeia os dados, renomeia a chave 'risco' e converte os tipos de dados 
+	const arrayDadosArquivo = dadosArquivo.map((info) => ({
 		setor: info.setor,
+		fator: parseInt(info.fator, 10),
+		porcentagem_risco: parseFloat(info.risco),
 	}));
 
 	// Retorna os registros diferentes do banco
 	const diferentes = arrayDadosArquivo.filter(item => {
-		const registroBanco = dadosBanco.find(registro => registro.id_fator === item.id_fator && registro.setor === item.setor);
+		const registroBanco = dadosBanco.find(registro => registro.id_fator === item.fator && registro.setor === item.setor);
 		return !registroBanco || registroBanco.porcentagem_risco !== item.porcentagem_risco;
 	});
 	return diferentes;
 };
-
 // Selecionar setores
 const consultarSetores = async (nomeDoBanco, instrucao_sql) => { 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
-
 	const [setores] = await db.query(instrucao_sql);
 	return setores;
 };
-
 // Selecionar os dados do banco para o PDF
 const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
@@ -166,7 +158,6 @@ const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
 		db.end();
 	}
 };
-
 // Selecionar dados GERENCIAIS para salvar no Banco
 const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = null) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
@@ -203,7 +194,6 @@ const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = n
 		db.end();
 	}
 };
-
 // Selecionar dados GERENCIAIS para o PDF
 const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = null) => { 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);

@@ -1,12 +1,10 @@
-function normalizarDadosParaOBanco(dadosGerenciais) {
-	const dadosNormalizados = {};
+function normalizarDadosEmpresa(dadosGerenciais) {
+	const dadosNormalizados = [];
 
 	for (const [fator, conteudo] of Object.entries(dadosGerenciais)) {
 		const { respostas, risco } = conteudo;
 
 		if (respostas && respostas.length > 0) {
-			const primeiraResposta = respostas[0];
-
 			dadosNormalizados[fator] = {
 				risco: risco.toFixed(1),
 			};
@@ -14,42 +12,39 @@ function normalizarDadosParaOBanco(dadosGerenciais) {
 	}
 	return dadosNormalizados;	
 }
-
-function normalizarDadosSetorParaOBanco(dadosGerenciaisSetor) {
-	//console.log('ENTRADA DA FUNÇÃO ===>');
-	//console.log(JSON.stringify(dadosGerenciaisSetor, null, 2));
-
+function normalizarDadosSetor(dadosGerenciaisSetor) {
 	const dadosNormalizados = [];
 
+	// Verifica se dadosGerenciaisSetor não está vazio ou se não é um objeto 
 	if (!dadosGerenciaisSetor || typeof dadosGerenciaisSetor !== 'object') {
 		console.warn('Dados inválidos recebidos na função.');
 		return dadosNormalizados;
 	}
 
-	for (const [setor, conteudo] of Object.entries(dadosGerenciaisSetor)) {
-		if (!conteudo || !Array.isArray(conteudo.respostas)) {
-			console.warn(`Sem respostas válidas para o setor: ${setor}`); // Dados de resposta não é um array --------------> ERRO!!!
+	// Desestrutura o objeto e percorre os setores
+	for (const [setor, fatores] of Object.entries(dadosGerenciaisSetor)) {
+
+		// Verifica se os fatores não estão vazios ou se não é um objeto
+		if (!fatores || typeof fatores !== 'object') {
+			console.warn(`Sem fatores válidos para o setor: ${setor}`);
 			continue;
 		}
 
-		for (const resposta of conteudo.respostas) {
-			if (!resposta?.setor) {
-				console.warn(`Resposta sem setor: ${JSON.stringify(resposta)}`);
+		// Desestrutura o objeto e percorre os fatores
+		for (const [idFator, conteudo] of Object.entries(fatores)) {
+
+			// Verifica se o conteúdo não está vazio ou se as respostas não são um array 
+			if (!conteudo || typeof conteudo.risco !== 'number') {
+				console.warn(`Sem risco válido para o setor: ${setor}, fator: ${idFator}`);
 				continue;
 			}
-			
 			dadosNormalizados.push({
-				setor,
-				risco: Number(conteudo.risco).toFixed(1),
-				fator: resposta.fator,
-				id_fator: resposta.id_fator
+				setor: setor,
+				fator: parseInt(idFator, 10),
+				risco: parseFloat(conteudo.risco).toFixed(1)
 			});
 		}
 	}
-
-	//console.log('Resultado final:', dadosNormalizados);
 	return dadosNormalizados;
 }
-
-
-export { normalizarDadosParaOBanco, normalizarDadosSetorParaOBanco };
+export { normalizarDadosEmpresa, normalizarDadosSetor };
