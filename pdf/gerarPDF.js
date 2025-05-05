@@ -16,9 +16,9 @@ const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
 	pdf.pipe(fluxoEscrita);
 	return { pdf, caminhoArquivoPDF };
 };
-const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio = null) => {
+const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio) => {
 	let localImagens = [];
-
+	
 	if (tipoRelatorio === "RELATÓRIO DO GRAU DE RISCO PONDERADO") {
 		localImagens = await gerarGraficosGerenciais(dados, setor);
 	} else {
@@ -57,6 +57,11 @@ const adicionaInformacoesDoGrafico = async (pdf, dados, posicao) => {
 const adicionaInformacoesDoGraficoGerencial = async (pdf, dados, posicao) => {
 	posicao = definePosicao(pdf, 800, posicao); // Define a posição do texto
 	formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO - porcentagem de risco psicossocial por fator:`);
+
+	if (!Array.isArray(dados)) {
+		console.error("ERRO: Esperava array, mas dados é:", typeof dados, dados);
+		return;
+	}
 
 	// Itera sobre o conteúdo e quantidade das respostas completas
 	dados.forEach(({ fator, porcentagem_risco }) => {

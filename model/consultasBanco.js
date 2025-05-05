@@ -208,10 +208,10 @@ const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = 
 	try { 
 		// Executa a query recebida
 		const [linhas] = await db.query(instrucao_sql);
-
+		
 		// Transforma o resultado em um objeto agrupado por nome do fator
 		resultados = linhas.reduce((objeto, linha) => {
-			const { fator, escala, porcentagem_risco, id_fator } = linha;
+			const { setor, fator, escala, porcentagem_risco, id_fator } = linha;
 			const chaveEscala = linha.escala; 
 
 			// Cria um array por nome do fator, se ainda não existir
@@ -221,6 +221,7 @@ const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = 
 
 			// Adiciona os dados do risco nesse fator
 			objeto[chaveEscala].push({
+				setor,
 				fator,
 				escala,
 				porcentagem_risco,

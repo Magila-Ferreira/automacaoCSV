@@ -252,7 +252,7 @@ const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => {
 	if (dadosBancoEmpresa.length === 0) {
 		const inserir_risco_fator = `INSERT IGNORE INTO risco_fator(porcentagem_risco, id_fator) VALUES (?, ?)`;
 		await salvarDadosGerenciais(registrosDiferentesEmpresa, nomeDoBanco, inserir_risco_fator);
-		console.log(`REGISTROS INSERIDOS NA TABELA: risco_fator, BD ${nomeDoBanco}\n`);
+		console.log(`REGISTROS INSERIDOS NA TABELA: risco_fator, BD: ${nomeDoBanco}`);
 		return true;
 	} else if (registrosDiferentesEmpresa.length > 0) {
 		const atualizar_risco_fator = `UPDATE risco_fator SET porcentagem_risco = ? WHERE id_fator = ?`;
@@ -260,7 +260,7 @@ const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => {
 		console.log(`REGISTROS ATUALIZADOS NA TABELA: risco_fator, BD ${nomeDoBanco}\n`);
 		return true;
 	} else {
-		console.log(`Não há novos registros GERENCIAIS DA EMPRESA para salvar ou atualizar no banco: ${nomeDoBanco} \n`);
+		console.log(`Não há novos registros GERENCIAIS para salvar no banco: ${nomeDoBanco}`);
 		return false;
 	}
 };
@@ -277,7 +277,7 @@ const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) =
 	if (dadosBancoSetor.length === 0) {
 		const inserir_risco_setor_fator = `INSERT IGNORE INTO risco_setor_fator(porcentagem_risco, setor, id_fator) VALUES (?, ?, ?)`;
 		await salvarDadosGerenciaisSetor(registrosDiferentesSetor, nomeDoBanco, inserir_risco_setor_fator);
-		console.log(`REGISTROS INSERIDOS NA TABELA: risco_setor_fator, BD ${nomeDoBanco}\n`);
+		console.log(`REGISTROS INSERIDOS NA TABELA: risco_setor_fator, BD: ${nomeDoBanco}\n`);
 		return true;
 
 	} else if (registrosDiferentesSetor.length > 0) {
@@ -293,7 +293,7 @@ const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) =
 		console.log(`REGISTROS ATUALIZADOS NA TABELA: risco_setor_fator, BD ${nomeDoBanco}\n`);
 		return true;
 	} else {
-		console.log(`Sem alterações necessárias na tabela risco_setor_fator BD: ${nomeDoBanco}.\n`);
+		//console.log(`Sem alterações necessárias na tabela risco_setor_fator BD: ${nomeDoBanco}.\n`);
 		return false;
 	}
 };

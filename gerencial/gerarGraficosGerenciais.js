@@ -11,10 +11,15 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 	let tentativa = 0;
 	const caminhosImagens = [];
 
+	// Garante que estamos lidando com um array plano, mesmo que venha agrupado por escala
+	const dadosConvertidos = Array.isArray(dadosEscala)
+		? dadosEscala
+		: Object.values(dadosEscala).flat();
+
 	// Agrupar dados por escala
 	const escalasAgrupadas = {};
 
-	dadosEscala.forEach(({ escala, fator, porcentagem_risco }) => { 
+	dadosConvertidos.forEach(({ escala, fator, porcentagem_risco }) => { 
 		if (!escalasAgrupadas[escala]) escalasAgrupadas[escala] = [];
 
 		escalasAgrupadas[escala].push({ escala, fator, porcentagem_risco });
@@ -22,7 +27,6 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 
 	while (tentativa < maximoTentativas) {
 		try {
-
 			for (const [escala, listaDeFatores] of Object.entries(escalasAgrupadas)) {
 				const fatores = listaDeFatores.map(f => f.fator);
 				const riscos = listaDeFatores.map(f => f.porcentagem_risco);
@@ -107,7 +111,7 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 									}
 								},
 								{
-									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 80, borderColor: "#a00", borderWidth: 1.5,
+									type: 'line', mode: 'vertical', scaleID: 'x-axis-0', value: 80, borderColor: "#c00", borderWidth: 1.5,
 									label: {
 										content: 'ALTO', enabled: true, position: 'top', backgroundColor: "#a00", yAdjust: 0,
 										fontSize: 14,

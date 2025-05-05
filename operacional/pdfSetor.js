@@ -4,7 +4,6 @@ import { formatarPrimeiraPagina, formatarTextoSetor, formatarTextoEscala, format
 const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatorio, introducao, nomeDaEmpresa) => {
 	try {
 		const { pdf, caminhoArquivoPDF } = criarPDF(pastaDestino, nomeArquivo, tipoRelatorio);
-
 		const titulo = 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS';
 		const definicao = 'Relatório por setor';
 		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
@@ -26,7 +25,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 				formatarTextoEscala(pdf, escala);
 
 				for (const fator in dadosSetores[setor][escala]) {
-					posicao = await adicionarGrafico(pdf, dadosSetores[setor][escala][fator], setor);
+					posicao = await adicionarGrafico(pdf, dadosSetores[setor][escala][fator], setor, tipoRelatorio);
 					await adicionaInformacoesDoGrafico(pdf, dadosSetores[setor][escala][fator], posicao);
 					espacamentoVertical(pdf, 1);
 				}

@@ -1,8 +1,8 @@
 import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF, consultarSetores } from "../model/consultasBanco.js";
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
-import { pdfDaEmpresa } from "./pdfGerencialEmpresa.js";
+import { pdfDaEmpresa, pdfPorSetor } from "./pdfGerencialEmpresa.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
-import { normalizarDadosEmpresa, normalizarDadosSetor } from "../normatizacao/dadosGerenciais.js";
+import { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor } from "../normatizacao/dadosGerenciais.js";
 import { salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor } from "../model/operacoesBanco.js";
 
 // SLQ
@@ -34,6 +34,14 @@ const respostaPorQuestaoSetor = `
 	WHERE i.setor = ?
 	GROUP BY qr.id_questao, qr.resposta, i.setor, f.id
 	ORDER BY qr.id_questao, qr.resposta;
+`;
+const riscoPorSetorEFator = `
+	SELECT rs.id_fator AS id_fator, rs.porcentagem_risco, rs.setor AS setor, e.nome AS escala, f.nome AS fator
+	FROM risco_setor_fator rs
+	JOIN fator f ON rs.id_fator = f.id
+	JOIN escala e ON f.id_escala = e.id
+	GROUP BY setor, id_fator, porcentagem_risco
+	ORDER BY setor, id_fator;
 `;
 async function acrescentaPesosEPonderacao(dadosGerenciais) {
 
@@ -231,38 +239,6 @@ function calcularRisco(respostas) {
 
 	return Number(media.toFixed(3));
 }
-async function agruparDadosPorSetor(dadosGerenciaisSetor) {
-	const agrupadoPorSetor = {}; // Objeto final a ser retornado
-
-	for (const questaoId in dadosGerenciaisSetor) { // Percorre as questões do objeto dadosGerenciaisSetor
-		const { fator, respostas } = dadosGerenciaisSetor[questaoId]; // Desestruturação do objeto
-		// A desistruturação serve para acessar o fator e as respostas diretamente, 
-		// sem precisar dos passsos intermediários, Exemplo: 
-		// fator = dadosGerenciaisSetor[questaoId].fator ou 
-		// respostas = dadosGerenciaisSetor[questaoId].respostas
-
-		// Percorre todas as respostas da questão atual
-		respostas.forEach(resposta => {
-			const setor = resposta.setor; // Obtém o nome do setor associado à resposta
-
-			// Cria o objeto do agrupamento por setor, se ainda não existir
-			if (!agrupadoPorSetor[setor]) {
-				agrupadoPorSetor[setor] = {};
-			}
-
-			// Cria a questão dentro do setor se ainda não existir
-			if (!agrupadoPorSetor[setor][questaoId]) {
-				agrupadoPorSetor[setor][questaoId] = {
-					fator, // Mantém o fator associado à questão
-					respostas: [], // Inicia um array para armazenar as respostas
-				};
-			}
-			agrupadoPorSetor[setor][questaoId].respostas.push(resposta); // Adiciona a resposta atual ao array de
-			// 																respostas do setor e questão correspondente
-		});
-	}
-	return agrupadoPorSetor;
-}
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 	const tipoRelatorio = "RELATÓRIO DO GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
 	try {
@@ -293,28 +269,27 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		await salvarRegistrosGerenciaisSetor(dadosGerenciaisSetor, nomeDoBanco);
 
 		// Selecionar os dados do banco para gerar PDF Gerencial
-		const dadosGerenciaisEmpresaPdf = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);
-
+		const dadosEmpresaPdf = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);
+		const dadosSetorPdf = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorSetorEFator);
+		const dadosEstruturadosSetorPdf = await estruturaDadosPorSetor(dadosSetorPdf);
+		
 		// Verificar se há dados para gerar o PDF
-		const empresaSemDados = Object.values(dadosGerenciaisEmpresaPdf).flat().length === 0;
-		if (empresaSemDados) {
-			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${nomeDoBanco}`);
+		const empresaSemDados = Object.values(dadosEmpresaPdf).flat().length === 0;
+		const setorSemDados = Object.values(dadosEstruturadosSetorPdf).flat().length === 0;
+
+		if (empresaSemDados || setorSemDados) {
+			console.warn(`\nNenhum dado disponível para gerar os PDF's (Grau de risco ponderado). BD: ${nomeDoBanco}`);
 			return;
 		}
 
-		// Gerar o PDF da empresa
-		await pdfDaEmpresa(dadosGerenciaisEmpresaPdf, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
+		// Gerar o PDF's Grau de risco ponderado 'Empresa' e 'Setor'
+		await pdfDaEmpresa(dadosEmpresaPdf, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
 		console.log(`PDF da Empresa (Grau de risco ponderado) --> gerado e salvo com sucesso!\n`);
+		await pdfPorSetor(dadosEstruturadosSetorPdf, pastaSaida, `${nomeDaEmpresa}_Setores`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
+		console.log(`PDF Setores (Grau de risco ponderado) --> gerado e salvo com sucesso!\n`);
 
 	} catch (error) {
 		console.error(`Erro ao gerar PDFs: ${error.message}`);
 	}
 };
-
 export { disponibilizarPDFGerencial };
-
-// Passo 5: Gerar PDF gerencial - Setor
-
-// Passo 7: Inserir gráficos no PDF gerencial - Setor
-
-// Passo 9: Gerar e salvar o PDF gerencial - Setor

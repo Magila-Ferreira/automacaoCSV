@@ -47,4 +47,60 @@ function normalizarDadosSetor(dadosGerenciaisSetor) {
 	}
 	return dadosNormalizados;
 }
-export { normalizarDadosEmpresa, normalizarDadosSetor };
+async function agruparDadosPorSetor(dadosGerenciaisSetor) {
+	const agrupadoPorSetor = {}; // Objeto final a ser retornado
+
+	for (const questaoId in dadosGerenciaisSetor) { // Percorre as questões do objeto dadosGerenciaisSetor
+		const { fator, respostas } = dadosGerenciaisSetor[questaoId]; // Desestruturação do objeto
+		// A desistruturação serve para acessar o fator e as respostas diretamente, 
+		// sem precisar dos passsos intermediários, Exemplo: 
+		// fator = dadosGerenciaisSetor[questaoId].fator ou 
+		// respostas = dadosGerenciaisSetor[questaoId].respostas
+
+		// Percorre todas as respostas da questão atual
+		respostas.forEach(resposta => {
+			const setor = resposta.setor; // Obtém o nome do setor associado à resposta
+
+			// Cria o objeto do agrupamento por setor, se ainda não existir
+			if (!agrupadoPorSetor[setor]) {
+				agrupadoPorSetor[setor] = {};
+			}
+
+			// Cria a questão dentro do setor se ainda não existir
+			if (!agrupadoPorSetor[setor][questaoId]) {
+				agrupadoPorSetor[setor][questaoId] = {
+					fator, // Mantém o fator associado à questão
+					respostas: [], // Inicia um array para armazenar as respostas
+				};
+			}
+			agrupadoPorSetor[setor][questaoId].respostas.push(resposta); // Adiciona a resposta atual ao array de
+			// 																respostas do setor e questão correspondente
+		});
+	}
+	return agrupadoPorSetor;
+}
+async function estruturaDadosPorSetor(dadosPorFator) {
+	const estrutura = {};
+
+	const dados = Object.values(dadosPorFator).flat();
+
+	for (const { setor, escala, fator, porcentagem_risco, id_fator } of dados) {
+		if (!estrutura[setor]) {
+			estrutura[setor] = {};
+		}
+
+		if (!estrutura[setor][escala]) {
+			estrutura[setor][escala] = []; // Deve ser um array!
+		}
+
+		estrutura[setor][escala].push({
+			setor,
+			escala,
+			fator,
+			id_fator,
+			porcentagem_risco
+		});
+	}
+	return estrutura;
+}
+export { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor };
