@@ -271,13 +271,13 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
 
 		// Selecionar dados organizados por id_questao
-		let dadosGerenciais = await selecionarDadosGerenciais(nomeDoBanco, respostasPorQuestao);
+		let dadosGerenciaisEmpresa = await selecionarDadosGerenciais(nomeDoBanco, respostasPorQuestao);
 		let dadosGerenciaisSetor = await selecionarDadosGerenciais(nomeDoBanco, respostaPorQuestaoSetor, setoresDaEmpresa);
 
 		// Cálculo do risco por fator
-		dadosGerenciais = await acrescentaPesosEPonderacao(dadosGerenciais); // Calcula ponderação
-		dadosGerenciais = await acrescentaPorcentagem(dadosGerenciais); // Calcula porcentagem		
-		dadosGerenciais = await calcularRiscoEmpresaOuSetor(dadosGerenciais); // Calcula o risco por fator
+		dadosGerenciaisEmpresa = await acrescentaPesosEPonderacao(dadosGerenciaisEmpresa); // Calcula ponderação
+		dadosGerenciaisEmpresa = await acrescentaPorcentagem(dadosGerenciaisEmpresa); // Calcula porcentagem		
+		dadosGerenciaisEmpresa = await calcularRiscoEmpresaOuSetor(dadosGerenciaisEmpresa); // Calcula o risco por fator
 
 		dadosGerenciaisSetor = await acrescentaPesosEPonderacao(dadosGerenciaisSetor); // Calcula ponderação		
 		dadosGerenciaisSetor = await agruparDadosPorSetor(dadosGerenciaisSetor); // Agrupa os dados por setor
@@ -285,30 +285,25 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		dadosGerenciaisSetor = await calcularRiscoEmpresaOuSetor(dadosGerenciaisSetor); // Calcula o risco por setor
 				
 		// Normalização dos dados gerenciais: EMPRESA e SETOR
-		dadosGerenciais = normalizarDadosEmpresa(dadosGerenciais);
+		dadosGerenciaisEmpresa = normalizarDadosEmpresa(dadosGerenciaisEmpresa);
 		dadosGerenciaisSetor = normalizarDadosSetor(dadosGerenciaisSetor);
 
 		// Salvar risco_fator e risco_setor_fator no banco
-		await salvarRegistrosGerenciais(dadosGerenciais, nomeDoBanco);
+		await salvarRegistrosGerenciais(dadosGerenciaisEmpresa, nomeDoBanco);
 		await salvarRegistrosGerenciaisSetor(dadosGerenciaisSetor, nomeDoBanco);
-			
 
-		//console.log("DADOS EMPRESA APÓS O CÁLCULO DO FATOR ---> ", JSON.stringify(dadosGerenciais, null, 2));
-		//console.log(JSON.stringify(dadosGerenciaisSetor, null, 2));
-
-		// Selecionar os dados do banco para gerar o PDF Gerencial
-		const dadosGerenciaisEmpresa = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);
-
+		// Selecionar os dados do banco para gerar PDF Gerencial
+		const dadosGerenciaisEmpresaPdf = await selecionarDadosGerenciaisPDF(nomeDoBanco, riscoPorFator);
 
 		// Verificar se há dados para gerar o PDF
-		const empresaSemDados = Object.values(dadosGerenciaisEmpresa).flat().length === 0;
+		const empresaSemDados = Object.values(dadosGerenciaisEmpresaPdf).flat().length === 0;
 		if (empresaSemDados) {
 			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${nomeDoBanco}`);
 			return;
 		}
 
 		// Gerar o PDF da empresa
-		await pdfDaEmpresa(dadosGerenciaisEmpresa, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
+		await pdfDaEmpresa(dadosGerenciaisEmpresaPdf, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
 		console.log(`PDF da Empresa (Grau de risco ponderado) --> gerado e salvo com sucesso!\n`);
 
 	} catch (error) {

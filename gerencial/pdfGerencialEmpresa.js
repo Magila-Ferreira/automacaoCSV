@@ -14,7 +14,7 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, 
 
 		formatarDescricaoArquivo(pdf, descricaoDoArquivo);
 
-		// Itera sobre as escalas
+		// Itera sobre a chave 'escala'
 		for (const [escala, dados] of Object.entries(dadosPDF)) { 
 			// Verifica se a escala é válida
 			if (!dados || dados.length === 0) continue;
