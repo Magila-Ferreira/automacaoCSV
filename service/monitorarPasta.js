@@ -4,7 +4,7 @@ import { processarArquivoEntrada } from './lerArquivos.js';
 import { salvarRegistrosNoBanco } from '../model/operacoesBanco.js';
 import { disponibilizarPDF } from '../operacional/disponibilizarPDF.js';
 import { disponibilizarPDFGerencial } from '../gerencial/disponibilizarPDFGerencial.js';
-import { alertarFimDoProcesso } from './alertarUsuario.js';
+import { alertarFimDoProcesso } from './alerta.js';
 
 // Verifica se o nome do banco é válido e o higieniza
 const higienizaNomeDoBancoEPDF = (filePath) => {

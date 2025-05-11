@@ -35,7 +35,8 @@
     "pdfkit": "^0.16.0",
     "play-sound": "^1.1.6",
     "plotly.js": "^3.0.1",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "snoretoast": "^1.0.232"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
