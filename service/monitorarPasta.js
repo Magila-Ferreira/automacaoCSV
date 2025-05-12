@@ -5,6 +5,7 @@ import { salvarRegistrosNoBanco } from '../model/operacoesBanco.js';
 import { disponibilizarPDF } from '../operacional/disponibilizarPDF.js';
 import { disponibilizarPDFGerencial } from '../gerencial/disponibilizarPDFGerencial.js';
 import { alertarFimDoProcesso } from '../alerta/alerta.js';
+import { verificarSeOBancoExiste } from '../model/recuperarDadosBanco.js';
 
 // Verifica se o nome do banco é válido e o higieniza
 const higienizaNomeDoBancoEPDF = (filePath) => {
@@ -27,6 +28,28 @@ const isArquivoValido = (filePath) => {
 	);
 };
 
+// Recuperar os dados do banco e gerar o PDF
+async function gerarPdfComOsDadosSalvosNoBanco(nomeDoBancoARecuperar, pastaSaida, nomeDaEmpresaARecuperar) {
+	try {
+		const bancoExiste = await verificarSeOBancoExiste(nomeDoBancoARecuperar);
+		
+		if (!bancoExiste) { 
+			console.warn(`\n[MODO RECUPERAÇÃO] => Banco de dados "${nomeDoBancoARecuperar}" não encontrado. Operação CANCELADA.`);
+
+			console.log("MONITORANDO PASTA...\n");
+			return;
+		}
+		console.log(`\n[MODO RECUPERAÇÃO] => Arquivo com prefixo RECUPERAR_ detectado.`); 
+		console.log(`Iniciando geração de PDF com os dados salvos no banco "${nomeDoBancoARecuperar}"\n`);
+		
+		await disponibilizarPDF(nomeDoBancoARecuperar, pastaSaida, nomeDaEmpresaARecuperar);
+		await disponibilizarPDFGerencial(nomeDoBancoARecuperar, pastaSaida, nomeDaEmpresaARecuperar);
+		await alertarFimDoProcesso(); // FIM
+	} catch (error) {
+		console.error(`Erro ao gerar PDF com os dados RECUPERADOS do banco: ${error.message}`);
+	}
+}
+
 const inicializarPrograma = () => {
 	const pastaEntrada = path.resolve(process.cwd(), '..', 'arquivosPgr', 'excel_csv');
 	const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
@@ -44,7 +67,15 @@ const inicializarPrograma = () => {
 		const nomes = higienizaNomeDoBancoEPDF(filePath); // Define o nome do banco (nome do arquivo ou nome padro)
 		const nomeDoBanco = nomes.nomeDoBanco;
 		const nomeDaEmpresa = nomes.nome;
+
 		console.log("MONITORANDO PASTA...");
+
+		if (nomeDaEmpresa.slice(0, 10) === "RECUPERAR_") {
+			const nomeDoBancoARecuperar = nomeDoBanco.substring(10); // ou nomeDoBanco.replace('RECUPERAR_', '');
+			const nomeDaEmpresaARecuperar = nomeDaEmpresa.substring(10); // ou slice(10);
+			await gerarPdfComOsDadosSalvosNoBanco(nomeDoBancoARecuperar, pastaSaida, nomeDaEmpresaARecuperar);
+			return;
+		}		
 
 		try {
 			if (!isArquivoValido(filePath)) return;
@@ -56,10 +87,10 @@ const inicializarPrograma = () => {
 			await salvarRegistrosNoBanco(dadosTratados, nomeDoBanco, identificacaoCols, colunasDasRespostasExcel);
 			await disponibilizarPDF(nomeDoBanco, pastaSaida, nomeDaEmpresa);
 			await disponibilizarPDFGerencial(nomeDoBanco, pastaSaida, nomeDaEmpresa);
+			await alertarFimDoProcesso(); // FIM	
 		} catch (err) {
 			console.error(`${err}\n`);
-		}
-		alertarFimDoProcesso(); // FIM								
+		}							
 	});
 	console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
