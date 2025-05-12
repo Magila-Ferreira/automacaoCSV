@@ -19,7 +19,7 @@ const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
 const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio) => {
 	let localImagens = [];
 	
-	if (tipoRelatorio === "RELATÓRIO DO GRAU DE RISCO PONDERADO") {
+	if (tipoRelatorio === "GRAU DE RISCO PONDERADO") {
 		localImagens = await gerarGraficosGerenciais(dados, setor);
 	} else {
 		localImagens = await gerarGrafico(dados, setor);

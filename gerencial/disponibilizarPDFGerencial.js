@@ -240,7 +240,7 @@ function calcularRisco(respostas) {
 	return Number(media.toFixed(3));
 }
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
-	const tipoRelatorio = "RELATÓRIO DO GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
+	const tipoRelatorio = "GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
 	try {
 		// Selecionar os setores
 		const setores = await consultarSetores(nomeDoBanco, selecionar_setores); // Objeto com chave

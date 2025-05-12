@@ -27,7 +27,7 @@ const respostas_setor = `
 			GROUP BY qr.resposta;`;
 
 const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
-	let tipoRelatorio = 'RELATÓRIO DA PORCENTAGEM DE RESPOSTAS';
+	let tipoRelatorio = 'PORCENTAGEM DE RESPOSTAS';
 	try {
 		// Selecionar dados por empresa
 		const dadosPDF = await selecionarDadosPDF(nomeDoBanco, respostas_empresa);
