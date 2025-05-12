@@ -2,7 +2,7 @@ import { Service } from 'node-windows';
 
 const svc = new Service({
 	name: "AutomacaoNodeJS",
-	script: "C:\\amb_teste\\servico_windows\\automacao\\index.js" // Caminho do script usado na instalação
+	script: "C:\\amb_sw\\automacao\\index.js" // Caminho do script usado na instalação
 });
 
 svc.on("uninstall", () => {
