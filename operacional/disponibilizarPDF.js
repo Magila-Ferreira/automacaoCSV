@@ -1,7 +1,9 @@
+import fs from 'fs';
 import { introducaoOperacional } from '../conteudoEstatico/introducaoPDF.js';
 import { selecionarDadosPDF, consultarSetores } from '../model/consultasBanco.js';
 import { pdfDaEmpresa } from './pdfEmpresa.js';
 import { pdfPorSetor } from './pdfSetor.js';
+import { pdfAberto } from '../pdf/verificaStatusPdf.js';
 
 // SLQ
 /* ----------> Contabiliza as respostas da empresa, por fator <---------- */
@@ -42,19 +44,6 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 			dadosPDF_porSetor[setor] = await selecionarDadosPDF(nomeDoBanco, respostas_setor, setor);
 		}
 
-		// Verificar se há dados para gerar o PDF
-		const empresaSemDados = Object.values(dadosPDF).flat().length === 0;
-		const setoresSemDados = Object.values(dadosPDF_porSetor).every(obj => Object.values(obj).flat().length === 0);
-
-		if (empresaSemDados && setoresSemDados) {
-			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${nomeDoBanco}`);
-			return;
-		};
-
-		// Gerar o PDF da empresa  
-		await pdfDaEmpresa(dadosPDF, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
-		console.log(`PDF da Empresa (% de respostas) --> gerado e salvo com sucesso!\n`);
-
 		// Organizar os dados por setor 
 		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [setor, fatores]) => {
 			acumulador[setor] = {};
@@ -79,7 +68,25 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 			return;
 		}
 
-		// Gerar o PDF consolidado por setor
+		// Verificar se há dados para gerar o PDF
+		const empresaSemDados = Object.values(dadosPDF).flat().length === 0;
+		const setoresSemDados = Object.values(dadosPDF_porSetor).every(obj => Object.values(obj).flat().length === 0);
+		if (empresaSemDados && setoresSemDados) {
+			console.warn(`\nNenhum dado disponível para gerar PDF. ARQUIVO: ${nomeDoBanco}`);
+			return;
+		};
+
+		// Verifica se o arquivo não está aberto, antes de gerar o PDF
+		const caminhoCompletoEmpresa = `${pastaSaida}\\${nomeDaEmpresa}_Empresa - ${tipoRelatorio}.pdf`; 
+		const caminhoCompletoSetores = `${pastaSaida}\\${nomeDaEmpresa}_Setores - ${tipoRelatorio}.pdf`; 
+		while ((fs.existsSync(caminhoCompletoEmpresa) && await pdfAberto(caminhoCompletoEmpresa))
+			|| (fs.existsSync(caminhoCompletoSetores) && await pdfAberto(caminhoCompletoSetores))) {
+			console.log(`Arquivo(s) PDF em uso. Feche-o(s) para continuar...`);
+			await new Promise(resolve => setTimeout(resolve, 10000)); // Espera 10 segundos
+		} 
+		// Gerar os PDF's da Empresa e por Setor
+		await pdfDaEmpresa(dadosPDF, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
+		console.log(`PDF da Empresa (% de respostas) --> gerado e salvo com sucesso!\n`);
 		await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDaEmpresa}_Setores`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
 		console.log(`PDF por Setor (% de respostas) --> gerado e salvo com sucesso!\n`);
 	} catch (error) {

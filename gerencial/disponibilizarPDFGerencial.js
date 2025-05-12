@@ -1,9 +1,11 @@
+import fs from "fs";
 import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF, consultarSetores } from "../model/consultasBanco.js";
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
 import { pdfDaEmpresa, pdfPorSetor } from "./pdfGerencialEmpresa.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
 import { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor } from "../normatizacao/dadosGerenciais.js";
 import { salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor } from "../model/operacoesBanco.js";
+import { pdfAberto } from "../pdf/verificaStatusPdf.js";
 
 // SLQ
 // /* ----------> Respostas da empresa agrupadas por questão <---------- */
@@ -282,7 +284,17 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 			return;
 		}
 
-		// Gerar o PDF's Grau de risco ponderado 'Empresa' e 'Setor'
+		// Verifica se o arquivo não está aberto, antes de gerar o PDF
+		const caminhoCompletoEmpresa = `${pastaSaida}\\${nomeDaEmpresa}_Empresa - ${tipoRelatorio}.pdf`;
+		const caminhoCompletoSetores = `${pastaSaida}\\${nomeDaEmpresa}_Setores - ${tipoRelatorio}.pdf`;
+
+		while ((fs.existsSync(caminhoCompletoEmpresa) && await pdfAberto(caminhoCompletoEmpresa))
+			|| (fs.existsSync(caminhoCompletoSetores) && await pdfAberto(caminhoCompletoSetores))) {
+			console.log(`Arquivo(s) PDF em uso. Feche-o(s) para continuar...`);
+			await new Promise(resolve => setTimeout(resolve, 10000)); // Espera 10 segundos
+		}
+
+		// Gerar os PDF's Grau de risco ponderado 'Empresa' e 'Setor'
 		await pdfDaEmpresa(dadosEmpresaPdf, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
 		console.log(`PDF da Empresa (Grau de risco ponderado) --> gerado e salvo com sucesso!\n`);
 		await pdfPorSetor(dadosEstruturadosSetorPdf, pastaSaida, `${nomeDaEmpresa}_Setores`, tipoRelatorio, introducaoGerencial, nomeDaEmpresa);
