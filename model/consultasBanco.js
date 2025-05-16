@@ -1,12 +1,11 @@
 import { gerenciadorDeConexoesBD } from "../config/configBanco.js";
-
-const usuario = 'root'; // Usuário com todas as permissões para operar o banco
+import { USUARIO_BD } from "../config/configBanco.js";
 
 // Recuperar os registros do banco
-const recuperarDadosDoBanco = async (nomeDoBanco, usuario) => {
+const recuperarDadosDoBanco = async (nomeDoBanco, USUARIO_BD) => {
 	const seleciona_dados_identificacao = `SELECT id, setor, cargo, idade, escolaridade, estadoCivil, genero FROM identificacao ORDER BY id ASC;`;
 
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD); // Conectar ao banco
 	try {
 		const [retorno_sql] = await db.query(seleciona_dados_identificacao);
 
@@ -30,8 +29,8 @@ const recuperarDadosDoBanco = async (nomeDoBanco, usuario) => {
 	}
 };
 // Recupera os registros gerenciais do banco - Empresa
-const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, usuario, instrucao_sql) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
+const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, USUARIO_BD, instrucao_sql) => {
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD); // Conectar ao banco
 
 	try {
 		// Retorna os registros do banco, se houver
@@ -51,8 +50,8 @@ const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, usuario, instrucao
 	}
 }
 // Recupera os registros gerenciais do banco
-const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, usuario, instrucao_sql) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Conectar ao banco
+const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, USUARIO_BD, instrucao_sql) => {
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD); // Conectar ao banco
 
 	try {
 		// Retorna os registros do banco, se houver
@@ -127,13 +126,13 @@ const filtrarRegistrosGerenciaisNovosSetor = (dadosArquivo, dadosBanco) => {
 };
 // Selecionar setores
 const consultarSetores = async (nomeDoBanco, instrucao_sql) => { 
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 	const [setores] = await db.query(instrucao_sql);
 	return setores;
 };
 // Selecionar os dados do banco para o PDF
 const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	let resultados = {};
 	try {
@@ -160,7 +159,7 @@ const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
 };
 // Selecionar dados GERENCIAIS para salvar no Banco
 const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = null) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 	let resultados = [];
 
 	try {
@@ -196,7 +195,7 @@ const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = n
 };
 // Selecionar dados GERENCIAIS para o PDF
 const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = null) => { 
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	// Caso a instrução seja para obter os setores, retorna-os
 	if (instrucao_sql.trim().toLowerCase().startsWith("select distinct setor")) {

@@ -12,11 +12,11 @@ const higienizaNomeDoBancoEPDF = (filePath) => {
 	if (!filePath || typeof filePath !== "string" || !filePath.trim()) {
 		return "analise_pgr"; // Nome padrão em caso de erro
 	}
-	let nome = path.basename(filePath.trim(), path.extname(filePath.trim()));
-	const ext = path.extname(filePath.trim()).replace('.', '_'); // Obtém a extensão e troca o ponto por "_"
-
 	// Substituir caracteres inválidos e garantir um nome válido
-	const nomeDoBanco = `${nome}${ext}`.replace(/[^a-zA-Z0-9_]/g, "_").substring(0, 64) || "analise_pgr";
+	let nome = path.basename(filePath.trim(), path.extname(filePath.trim())).toLowerCase().replace(/[^a-zA-Z0-9_]/g, "_").substring(0, 64) || "nome_empresa";
+	const ext = path.extname(filePath.trim()).replace('.', '_'); // Obtém a extensão e troca o ponto por "_"
+	const nomeDoBanco = `${nome}${ext}`.replace(/[^a-zA-Z0-9_]/g, "_").substring(0, 64) || "nome_banco";
+
 	return { nomeDoBanco, nome };
 };
 
@@ -70,7 +70,7 @@ const inicializarPrograma = () => {
 
 		console.log("MONITORANDO PASTA...");
 
-		if (nomeDaEmpresa.slice(0, 10) === "RECUPERAR_") {
+		if (nomeDaEmpresa.slice(0, 10).toUpperCase() === "RECUPERAR_") {
 			const nomeDoBancoARecuperar = nomeDoBanco.substring(10); // ou nomeDoBanco.replace('RECUPERAR_', '');
 			const nomeDaEmpresaARecuperar = nomeDaEmpresa.substring(10); // ou slice(10);
 			await gerarPdfComOsDadosSalvosNoBanco(nomeDoBancoARecuperar, pastaSaida, nomeDaEmpresaARecuperar);

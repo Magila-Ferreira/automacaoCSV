@@ -2,21 +2,48 @@ import { escalas, fatores, questoes } from '../conteudoEstatico/insertsEstaticos
 import { gerenciadorDeConexoesBD } from '../config/configBanco.js';
 import { filtrarRegistrosNovos, filtrarRegistrosGerenciaisNovos, filtrarRegistrosGerenciaisNovosSetor, recuperarDadosDoBanco, recuperarDadosGerenciaisDoSetor, recuperarDadosGerenciaisDaEmpresa } from './consultasBanco.js';
 
-const usuario = 'root'; // Usuário com todas as permissões para operar o banco
+import { NOME_BANCO_CONTROLE } from '../config/configBanco.js';
+import { USUARIO_BD } from '../config/configBanco.js';
 
+const criarBancoETabelaDeControle = async () => {
+	const criar_banco_controle = `CREATE DATABASE IF NOT EXISTS \`${NOME_BANCO_CONTROLE}\`
+    	CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;
+	const usar_banco = `USE \`${NOME_BANCO_CONTROLE}\`;`;
+	const criar_tabela_controle = `CREATE TABLE IF NOT EXISTS bancos (
+		nome_banco VARCHAR(100) PRIMARY KEY,
+		data_criacao DATE NOT NULL);`;
+
+	const db = gerenciadorDeConexoesBD(null, USUARIO_BD);
+	try {
+		await db.query(criar_banco_controle);
+		await db.query(usar_banco);
+		await db.query(criar_tabela_controle);
+		console.log(`Banco e Tabela de controle existentes!`);
+	} catch (error) {
+		console.error("Erro ao criar o banco controle_bancos: ", error.message);
+	} finally {
+		db.end();
+	}
+
+};
 const criarBanco = async (nomeDoBanco) => {
 	// SQL
 	const criar_banco = `CREATE DATABASE IF NOT EXISTS \`${nomeDoBanco}\`
     	CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;
+	const usar_banco = `USE \`${NOME_BANCO_CONTROLE}\`;`;
+	const registrar_controle_bancos = `INSERT IGNORE INTO bancos (nome_banco, data_criacao) VALUES (?, ?)`;
+	const data = new Date().toISOString().split('T')[0]; 
 
-	const conexoes = gerenciadorDeConexoesBD(null, usuario);
+	const db = gerenciadorDeConexoesBD(null, USUARIO_BD);
 	try {
-		await conexoes.query(criar_banco); // Cria o banco de dados
-		console.log(`Banco criado ou já existente: ${nomeDoBanco}`);
+		await db.query(criar_banco); 
+		await db.query(usar_banco);
+		await db.query(registrar_controle_bancos, [nomeDoBanco, data]);
+		console.log(`Banco ${nomeDoBanco} criado e inserido em ${NOME_BANCO_CONTROLE}!`);
 	} catch (error) {
 		console.error("Erro ao criar o banco: ", error.message);
 	} finally {
-		conexoes.end();
+		db.end();
 	}
 }
 const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
@@ -76,7 +103,7 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 		id_fator INT NOT NULL,
 		FOREIGN KEY (id_fator) REFERENCES fator(id));`;
 
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario); // Reutiliza a conexão com o banco
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD); // Reutiliza a conexão com o banco
 	try {
 		// Criar tabelas 
 		await db.query(criar_tabela_escala);
@@ -105,7 +132,7 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 	const inserir_questao_resposta = `INSERT IGNORE INTO questao_resposta 
         (id_identificacao, id_questao, resposta) VALUES (?, ?, ?)`;
 	
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	try {
 		// Insere dados na tabela escala
@@ -157,10 +184,11 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 };
 const salvarRegistrosNoBanco = async (dadosTratados, nomeDoBanco, identificacaoCols, colunasDasRespostasExcel) => {
 	// Criar banco
+	await criarBancoETabelaDeControle(); // Cria banco e tabela de controle, se não existir
 	await criarBanco(nomeDoBanco);
 	await definirTabelas(nomeDoBanco, identificacaoCols);
 
-	const dadosBanco = await recuperarDadosDoBanco(nomeDoBanco, usuario); // 1. Recupera os dados salvos no banco
+	const dadosBanco = await recuperarDadosDoBanco(nomeDoBanco, USUARIO_BD); // 1. Recupera os dados salvos no banco
 	const novosRegistros = filtrarRegistrosNovos(dadosTratados, dadosBanco); // 2. Compara os dados do arquivo com o banco
 
 	if (novosRegistros.length > 0) {
@@ -170,10 +198,36 @@ const salvarRegistrosNoBanco = async (dadosTratados, nomeDoBanco, identificacaoC
 	}
 	return novosRegistros.length > 0;
 };
+async function limparBancosAntigos() {
+	const seleciona_banco_antigo = `SELECT nome_banco, data_criacao FROM bancos`;
+	const deletar_banco_controle = `DELETE FROM bancos WHERE nome_banco = ?`;
+
+	const DIA_MS = 86400000;
+	const hoje = new Date();
+
+	const db = gerenciadorDeConexoesBD(NOME_BANCO_CONTROLE, USUARIO_BD);
+	const [bancos] = await db.query(seleciona_banco_antigo);
+
+	for (const { nome_banco, data_criacao } of bancos) { 
+		const idadeBanco = Math.floor(hoje - new Date(data_criacao)) / DIA_MS;
+
+		if (idadeBanco > 365) {
+			const destruir_banco = `DROP DATABASE IF EXISTS \`${nome_banco}\``;
+			try {
+				await db.query(destruir_banco);
+				await db.query(deletar_banco_controle, [nome_banco]);
+				console.log(`✅ Banco ${nome_banco} removido (${idadeBanco.toFixed(0)} dias).`);
+			} catch (error) {
+				console.error(`❌ Erro ao remover ${nome_banco}:`, error.message);
+			} 
+		};
+	};
+	await db.end();
+};
 
 // ------------------------------------------ Gerencial
 const salvarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	try {
 		for (const item of dados) {
@@ -187,7 +241,7 @@ const salvarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
 	}
 };
 const salvarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 	try {
 		for (const item of dados) {
 			const valores = [item.porcentagem_risco, item.setor, item.fator];
@@ -200,7 +254,7 @@ const salvarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => 
 	}
 };
 const atualizarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	try {
 		for (const item of dados) {
@@ -215,7 +269,7 @@ const atualizarDadosGerenciais = async (dados, nomeDoBanco, instrucao_sql) => {
 	}
 }; 
 const atualizarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => {
-	const db = gerenciadorDeConexoesBD(nomeDoBanco, usuario);
+	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	try {
 		for (const valores of dados) {
@@ -243,7 +297,7 @@ const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => {
 	const sql_risco_fator = `SELECT id_fator, porcentagem_risco FROM risco_fator;`;
 
 	// 1. Recupera os dados do banco: risco_fator
-	const dadosBancoEmpresa = await recuperarDadosGerenciaisDaEmpresa(nomeDoBanco, usuario, sql_risco_fator); 
+	const dadosBancoEmpresa = await recuperarDadosGerenciaisDaEmpresa(nomeDoBanco, USUARIO_BD, sql_risco_fator); 
 
 	// 2. Compara os dados do arquivo com o banco: risco_fator
 	const registrosDiferentesEmpresa = filtrarRegistrosGerenciaisNovos(dadosTratadosEmpresa, dadosBancoEmpresa);
@@ -268,7 +322,7 @@ const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) =
 	const sql_risco_setor_fator = `SELECT setor, id_fator, porcentagem_risco FROM risco_setor_fator;`;
 
 	// 1. Recupera os dados do banco: risco_setor_fator
-	const dadosBancoSetor = await recuperarDadosGerenciaisDoSetor(nomeDoBanco, usuario, sql_risco_setor_fator);
+	const dadosBancoSetor = await recuperarDadosGerenciaisDoSetor(nomeDoBanco, USUARIO_BD, sql_risco_setor_fator);
 
 	// 2. Compara os dados do arquivo com o banco: risco_setor_fator
 	const registrosDiferentesSetor = filtrarRegistrosGerenciaisNovosSetor(dadosTratadosSetor, dadosBancoSetor);
@@ -297,4 +351,4 @@ const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) =
 		return false;
 	}
 };
-export { salvarRegistrosNoBanco, salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor };
+export { salvarRegistrosNoBanco, salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor, limparBancosAntigos };

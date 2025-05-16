@@ -2,6 +2,10 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 dotenv.config();
 
+// config.js
+export const NOME_BANCO_CONTROLE = 'controle_bancos';
+export const USUARIO_BD = 'root';
+
 const gerenciadorDeConexoesBD = (database, usuario) => {
 	try {
 		// Seleciona as credenciais com base no usuário
