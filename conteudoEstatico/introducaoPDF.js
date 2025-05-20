@@ -23,11 +23,11 @@ O gráfico representa a porcentagem de risco por fator, calculado da seguinte fo
 
 Quantidade - soma da quantidade de cada variável de resposta por questão.
 Peso - atribuiu-se um peso a cada variável de resposta, conforme o seguinte critério:
-                    Resposta sem risco: (5)
-                    Resposta com baixo grau de risco: (4)
+                    Resposta sem risco: (1)
+                    Resposta com baixo grau de risco: (2)
                     Resposta intermediária: (3)
-                    Resposta com médio grau de risco: (2)
-                    Resposta com alto grau de risco: (1)
+                    Resposta com médio grau de risco: (4)
+                    Resposta com alto grau de risco: (5)
 Ponderação - multiplicou-se a quantidade de cada variável de resposta pelo peso correspondente (quantidade * peso).
 Porcentagem ponderada - cálculo da porcentagem correspondete a cada variável de resposta em relação a totalidade ponderada de respostas por questão (ponderação / total_ponderado * 100).
 Grau de risco por questão - calculado a partir da soma das porcentagens que apresentam grau de risco (peso 1 e 2).
