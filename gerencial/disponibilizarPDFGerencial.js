@@ -225,7 +225,7 @@ function calcularRisco(respostas) {
 	// Soma das porcentagens com peso 1 e 2 em cada questão
 	const somasPorQuestao = Object.values(respostasPorQuestao).map(respostasDaQuestao => {
 		return respostasDaQuestao
-			.filter(resposta => resposta.peso === 1 || resposta.peso === 2) // Filtra as respostas com peso 1 ou 2
+			.filter(resposta => resposta.peso === 5 || resposta.peso === 4) // Filtra as respostas com peso 1 ou 2
 			.reduce((total, { porcentagem }) => total + parseFloat(porcentagem), 0); // Soma as porcentagens das respostas filtradas
 	});
 
