@@ -30,7 +30,7 @@ Peso - atribuiu-se um peso a cada variável de resposta, conforme o seguinte cri
                     Resposta com alto grau de risco: (5)
 Ponderação - multiplicou-se a quantidade de cada variável de resposta pelo peso correspondente (quantidade * peso).
 Porcentagem ponderada - cálculo da porcentagem correspondete a cada variável de resposta em relação a totalidade ponderada de respostas por questão (ponderação / total_ponderado * 100).
-Grau de risco por questão - calculado a partir da soma das porcentagens que apresentam grau de risco (peso 1 e 2).
+Grau de risco por questão - calculado a partir da soma das porcentagens que apresentam grau de risco (peso 5, 4 e 3).
 Grau de risco por fator - calculado a partir da média simples entre as porcentagens de risco das questões que correspondem ao mesmo fator.
 
 OBSERVAÇÃO: a porcentagem que representa o grau de risco por fator, encontra-se arredondada com uma casas decimais, com o objetivo de facilitar a leitura do gráfico.
