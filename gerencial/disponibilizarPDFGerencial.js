@@ -84,71 +84,27 @@ async function acrescentaPesosEPonderacao(dadosGerenciais) {
 	});
 	return agrupamentoPorQuestao;
 };
-async function acrescentaPorcentagem(dadosGerenciais) {
-	// Seção: porcentagem ponderada por questão em dadosGerenciais
-	const dadosGerenciaisQuestao = [];
-
-	// Função para processar uma questão e calcular porcentagens
-	const processaQuestao = (idQuestao, questao) => {
-
-		// Cálculo da soma das ponderações
-		const totalPonderacao = questao.respostas.reduce((total, item) => total + item.ponderacao, 0);
-
-		questao.respostas.forEach((resposta) => {
-
-			// Cálculo da porcentagem ponderada
-			const porcentagem = totalPonderacao > 0 ? ((resposta.ponderacao / totalPonderacao) * 100) : 0;
-
-			// Adiciona a porcentagem ao objeto dadosGerenciaisQuestao
-			dadosGerenciaisQuestao.push({
-				setor: resposta.setor,
-				escala: resposta.escala,
-				id_fator: resposta.id_fator,
-				fator: questao.fator,
-				questao: Number(idQuestao),
-				resposta: resposta.resposta,
-				quantidade: resposta.quantidade,
-				peso: resposta.peso,
-				ponderacao: resposta.ponderacao,
-				porcentagem: porcentagem.toFixed(3),
-			});
-		});
-	};
-
-	// Detecta se os dados estão agrupados por setor
-	const primeiraChave = Object.keys(dadosGerenciais)[0];
-	const primeiroValor = dadosGerenciais[primeiraChave];
-	const isAgrupadoPorSetor = typeof primeiroValor === 'object' && !('respostas' in primeiroValor);
-
-	// Normaliza estrutura para [ [idQuestao, questao], ... ]
-	let questoesNormalizadas = [];
-
-	if (isAgrupadoPorSetor) {
-		// Desmembra os dados por setor e agrupa todas as questões em um único array
-		Object.values(dadosGerenciais).forEach(questoesSetor => {
-			questoesNormalizadas.push(...Object.entries(questoesSetor));
-		});
-	} else {
-		// Já está no formato esperado
-		questoesNormalizadas = Object.entries(dadosGerenciais);
-	}
-
-	// Processa todas as questões
-	questoesNormalizadas.forEach(([idQuestao, questao]) => {
-		processaQuestao(idQuestao, questao);
-	});
-
-	return dadosGerenciaisQuestao;
-}
 // Função principal que decide como processar os dados recebidos
 async function calcularRiscoEmpresaOuSetor(dadosGerenciais) {
 	if (!dadosGerenciais) return {};
 
-	if (Array.isArray(dadosGerenciais)) {
-		if (dadosGerenciais.length > 0
-			&& typeof dadosGerenciais[0].setor === 'string'
-			&& dadosGerenciais[0].setor.trim() !== "") {
+	// Verifica se os dados estão na estrutura de um objeto e não são nulos
+	if (typeof dadosGerenciais === 'object' && dadosGerenciais !== null) {
+		const chavesPrincipais = Object.keys(dadosGerenciais); // Obtém as chaves principais do objeto (1º nível)
+
+		// Verifica se a chave principal é um nome de setor [não um número de questão]
+		const isSetor = chavesPrincipais.every(chave => isNaN(Number(chave)));
+
+		// Verifica se a estrutura interna corresponde aos dados do setor
+		const isEstruturaSetor = isSetor && chavesPrincipais.every(setor => {
+			const dadosSetor = dadosGerenciais[setor];
 			
+			return typeof dadosSetor === 'object'
+				&& dadosSetor !== null
+				&& Object.keys(dadosSetor).every(subchave => !isNaN(Number(subchave)));
+		});
+		
+		if (isEstruturaSetor) {
 			// Caso seja dadosGerenciaisSetor (tem setor)
 			return calcularRiscoPorSetor(dadosGerenciais);
 		} else {
@@ -156,90 +112,120 @@ async function calcularRiscoEmpresaOuSetor(dadosGerenciais) {
 			return calcularRiscoPorEmpresa(dadosGerenciais);
 		}
 	}
-	// Se não for array (por segurança), retorna vazio
+	// Se não for um objeto (por segurança), retorna vazio
 	return {};
 }
 // Para dados da empresa (sem setor): agrupa por fator
-function calcularRiscoPorEmpresa(respostas) {
-	const agrupadoPorFator = {};
+function calcularRiscoPorEmpresa(dadosPorQuestao) {
+	const dadosPorFator = {};
 
-	respostas.forEach((item) => {
-		const fator = item.fator;
+	// Itera sobre cada questao
+	for (const questaoId in dadosPorQuestao) {
+		const { fator, respostas } = dadosPorQuestao[questaoId];
 
-		if (!agrupadoPorFator[fator]) {
-			agrupadoPorFator[fator] = {
+		// Se o fator ainda não foi criado, inicializa-o
+		if (!dadosPorFator[fator]) {
+			dadosPorFator[fator] = {
+				totalPonderado: 0,
+				risco: null,
 				respostas: [],
-				risco: null
 			};
 		}
-		agrupadoPorFator[fator].respostas.push(item);
-	});
 
-	for (const fator in agrupadoPorFator) {
-		agrupadoPorFator[fator].risco = calcularRisco(agrupadoPorFator[fator].respostas);
+		// Adiciona cada resposta com o número da questão embutido
+		const respostasComQuestao = respostas.map(resposta => ({
+			...resposta,
+			questao: Number(questaoId)
+		}));	
+		
+		dadosPorFator[fator].respostas.push(...respostasComQuestao);
+		
+		respostas.forEach(resposta => {
+			dadosPorFator[fator].totalPonderado += resposta.ponderacao;
+		});
+
+	};
+
+	for (const fator in dadosPorFator) {
+		dadosPorFator[fator].risco = calcularRisco(dadosPorFator[fator]);
 	}
-
-	return agrupadoPorFator;
+	return dadosPorFator;
 }
 // Para dados com setor: agrupa por setor > fator
-function calcularRiscoPorSetor(respostasComSetor) {
-	const agrupadoPorSetor = {};
+function calcularRiscoPorSetor(dadosPorQuestaoComSetor) {
+	const dadosPorSetorEFator = {};
 
-	respostasComSetor.forEach(resposta => {
-		const { setor, fator } = resposta;
+	// Itera sobre cada setor
+	for (const setor in dadosPorQuestaoComSetor) { 
+		const dadosDoSetor = dadosPorQuestaoComSetor[setor];
 
-		if (!agrupadoPorSetor[setor]) {
-			agrupadoPorSetor[setor] = {};
-		}
+		// Inicializa o setor na nova estrutura
+		dadosPorSetorEFator[setor] = {};
 
-		if (!agrupadoPorSetor[setor][fator]) {
-			agrupadoPorSetor[setor][fator] = {
-				respostas: [],
-				risco: null
-			};
-		}
+		// Itera sobre cada questão dentro do setor
+		for (const questaoId in dadosDoSetor) { 
+			const { fator, respostas } = dadosDoSetor[questaoId];
 
-		agrupadoPorSetor[setor][fator].respostas.push(resposta);
-	});
+			// Inicializa o fator se ele não existir
+			if (!dadosPorSetorEFator[setor][fator]) {
+				dadosPorSetorEFator[setor][fator] = {
+					totalPonderado: 0,
+					risco: null,
+					respostas: [],
+				};
+			}
 
-	for (const setor in agrupadoPorSetor) {
-		for (const fator in agrupadoPorSetor[setor]) {
-			agrupadoPorSetor[setor][fator].risco = calcularRisco(agrupadoPorSetor[setor][fator].respostas);
+			// Adiciona as respostas ao fator, incluindo setor e número da questão
+			const respostasComSetor = respostas.map(resposta => ({
+				...resposta,
+				setor: setor,
+				questao: Number(questaoId)
+			}));
+
+			// Adiciona as respostas ao fator
+			dadosPorSetorEFator[setor][fator].respostas.push(...respostasComSetor);
+
+			// Soma as ponderações por fator [no setor]
+			respostas.forEach(resposta => {
+				dadosPorSetorEFator[setor][fator].totalPonderado += resposta.ponderacao;
+			});
 		}
 	}
-	return agrupadoPorSetor;
+	
+	// Chama a função de cálculo de risco passando apenas as respostas do fator [dentro do setor]
+	for (const setor in dadosPorSetorEFator) {
+		for (const fator in dadosPorSetorEFator[setor]) {
+			dadosPorSetorEFator[setor][fator].risco = calcularRisco(dadosPorSetorEFator[setor][fator]);
+		}
+	}
+	return dadosPorSetorEFator;
 }
 // Função utilitária para calcular o risco
-function calcularRisco(respostas) {
-	const respostasPorQuestao = {};
+function calcularRisco(dadosFator) {
+	const riscoPorFator = {};
 
 	// Desestruturação das respostas 
-	respostas.forEach(({ questao, peso, porcentagem }) => {
-		if (!respostasPorQuestao[questao]) {
-			respostasPorQuestao[questao] = [];
+	Object.entries(dadosFator).forEach(({ peso, ponderacao }) => {
+		if (!riscoPorFator) {
+			riscoPorFator = [];
 		}
-		// Realocação dos pesos e porcentagens na questão (não em cada resposta)
-		respostasPorQuestao[questao].push({ peso, porcentagem });
 	});
 
-	// Soma das porcentagens com peso 1 e 2 em cada questão
-	const somasPorQuestao = Object.values(respostasPorQuestao).map(respostasDaQuestao => {
-		return respostasDaQuestao
-			.filter(resposta => resposta.peso === 5 || resposta.peso === 4 || resposta.peso === 3) // Filtra as respostas com peso 5 ou 4 ou 3
-			.reduce((total, { porcentagem }) => total + parseFloat(porcentagem), 0); // Soma as porcentagens das respostas filtradas
-	});
+	// Total Ponderado no fator
+	const totalPonderado = dadosFator.totalPonderado || 0;
 
-	// Total de questões no fator
-	const totalQuestoes = somasPorQuestao.length;
+	// Soma das ponderações com peso 5, 4 e 3 ---> REPRESENTAM RISCO
+	const somaPonderacaoComRisco = dadosFator.respostas.filter(resposta => [5, 4, 3].includes(resposta.peso))
+		.reduce((total, resposta) => total + resposta.ponderacao, 0);
+	
+	// Soma das ponderações com peso 1 e 2 ---> SEM RISCO
+	const somaPonderacaoSemRisco = dadosFator.respostas.filter(resposta => [1, 2].includes(resposta.peso))
+	.reduce((total, resposta) => total + resposta.ponderacao, 0);
 
-	if (totalQuestoes === 0) {
-		return 0;
-	}
+	// Cálculo do risco: divide-se a somaPonderacaoDeRisco [pesos 5, 4 e 3] pela soma total das ponderações * 100
+	const risco = somaPonderacaoComRisco / totalPonderado * 100 || 0;
 
-	// Cálculo da média de risco ponderada: soma as porcentagens com peso 1 e 2 e divide pelo total de questões
-	const media = somasPorQuestao.reduce((total, valor) => total + valor, 0) / totalQuestoes;
-
-	return Number(media.toFixed(3));
+	return Number(risco.toFixed(2));
 }
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 	const tipoRelatorio = "GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
@@ -254,12 +240,10 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 
 		// Cálculo do risco por fator
 		dadosGerenciaisEmpresa = await acrescentaPesosEPonderacao(dadosGerenciaisEmpresa); // Calcula ponderação
-		dadosGerenciaisEmpresa = await acrescentaPorcentagem(dadosGerenciaisEmpresa); // Calcula porcentagem		
 		dadosGerenciaisEmpresa = await calcularRiscoEmpresaOuSetor(dadosGerenciaisEmpresa); // Calcula o risco por fator
 
 		dadosGerenciaisSetor = await acrescentaPesosEPonderacao(dadosGerenciaisSetor); // Calcula ponderação		
 		dadosGerenciaisSetor = await agruparDadosPorSetor(dadosGerenciaisSetor); // Agrupa os dados por setor
-		dadosGerenciaisSetor = await acrescentaPorcentagem(dadosGerenciaisSetor); // Calcula porcentagem
 		dadosGerenciaisSetor = await calcularRiscoEmpresaOuSetor(dadosGerenciaisSetor); // Calcula o risco por setor
 				
 		// Normalização dos dados gerenciais: EMPRESA e SETOR
