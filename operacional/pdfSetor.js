@@ -26,7 +26,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 
 				for (const fator in dadosSetores[setor][escala]) {
 					posicao = await adicionarGrafico(pdf, dadosSetores[setor][escala][fator], setor, tipoRelatorio);
-					await adicionaInformacoesDoGrafico(pdf, dadosSetores[setor][escala][fator], posicao);
+					await adicionaInformacoesDoGrafico(pdf, dadosSetores[setor][escala][fator]);
 					espacamentoVertical(pdf, 1);
 				}
 			}

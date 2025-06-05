@@ -29,7 +29,7 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 		try {
 			for (const [escala, listaDeFatores] of Object.entries(escalasAgrupadas)) {
 				const fatores = listaDeFatores.map(f => f.fator);
-				const riscos = listaDeFatores.map(f => f.porcentagem_risco);
+				const riscos = listaDeFatores.map(f => f.porcentagem_risco.toFixed(1));
 
 				const corBarra = riscos.map(valor =>
 					valor <= 40 ? "#080" : valor <= 80 ? "#cc0" : "#c00"
@@ -124,8 +124,8 @@ async function gerarGraficosGerenciais(dadosEscala, setor = null) {
 							datalabels: {
 								display: true,
 								color: "#000",
-								anchor: "center",
-								align: "center",
+								anchor: "start",
+								align: "right",
 								font: { weight: "bold", size: 18 }
 							}
 						},

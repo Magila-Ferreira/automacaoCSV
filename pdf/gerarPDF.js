@@ -4,7 +4,7 @@ import sizeOf from "image-size";
 import path from 'path';
 import { gerarGrafico } from '../operacional/gerarGraficos.js';
 import { gerarGraficosGerenciais } from '../gerencial/gerarGraficosGerenciais.js';
-import { formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY } from './formatacaoPDF.js';
+import { formatarLinhasTabela, formatarLinhaDivisoriaTabela, formatarCabecalhoTabela, formatarTextoSubTitulo, formatarTextoConteudo, formatarTextoEmDestaque, posicaoAtualPDF, definePosicao, atualizaPosicaoY, garantirEspaco } from './formatacaoPDF.js';
 import { normalizarRespostas } from '../normatizacao/respostas.js';
 
 const criarPDF = (pastaDestino, nomeArquivo, tipoRelatorio) => {
@@ -36,8 +36,10 @@ const adicionarGrafico = async (pdf, dados, setor = null, tipoRelatorio) => {
 	}
 	return posicao;
 };
-const adicionaInformacoesDoGrafico = async (pdf, dados, posicao) => {
-	posicao = definePosicao(pdf, 750, posicao); // Define a posição do texto
+const adicionaInformacoesDoGrafico = async (pdf, dados) => {
+	// Garante espaço para as informações do gráfico
+	garantirEspaco(pdf, 100);
+		
 	formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO (quantidade de respostas por categoria):`);
 
 	let totalRespostas = 0;
@@ -54,23 +56,53 @@ const adicionaInformacoesDoGrafico = async (pdf, dados, posicao) => {
 	// Total de respostas por fator
 	formatarTextoEmDestaque(pdf, `TOTAL DE RESPOSTAS POR FATOR: ${totalRespostas}`);
 };
-const adicionaInformacoesDoGraficoGerencial = async (pdf, dados, posicao) => {
-	posicao = definePosicao(pdf, 800, posicao); // Define a posição do texto
-	formatarTextoSubTitulo(pdf, `INFORMAÇÕES DO GRÁFICO - porcentagem de risco psicossocial por fator:`);
-
+const adicionaInformacoesDoGraficoGerencial = async (pdf, dados) => {	
 	if (!Array.isArray(dados)) {
 		console.error("ERRO: Esperava array, mas dados é:", typeof dados, dados);
 		return;
 	}
 
-	// Itera sobre o conteúdo e quantidade das respostas completas
-	dados.forEach(({ fator, porcentagem_risco }) => {
-		formatarTextoConteudo(
-			pdf,
-			`${fator.charAt(0).toUpperCase() + fator.slice(1).toLowerCase()}: ${porcentagem_risco}%`
-		);
-	});
-	atualizaPosicaoY(pdf, posicao, 70);
+	const obterCorRisco = (valor) => valor <= 40 ? '#080' : valor <= 80 ? '#aa0' : '#a00';
+
+	const xFator = 50;
+	const xRisco = 250;
+	const xAusencia = 350;
+	const alturaLinha = 16;
+
+	// Garante espaço e espaçamentos para a tabela
+	pdf.y += 10;
+	garantirEspaco(pdf, 100); 
+	
+	// Título da seção
+	formatarTextoSubTitulo(pdf, "INFORMAÇÕES DO GRÁFICO: ");
+	pdf.y += 5;
+
+	// Cabeçalho
+	let yLinha = pdf.y;
+	formatarCabecalhoTabela(pdf, 'Fator', 'Risco', 'Ausência de Risco', xFator, xRisco, xAusencia, yLinha);
+	pdf.y += 0.5;
+
+	// Linha divisória da tabela
+	formatarLinhaDivisoriaTabela(pdf, xFator);
+	pdf.y += 5;
+
+	// Linhas de conteúdo
+	for (const { fator, porcentagem_risco } of dados) {
+		const risco = parseFloat(porcentagem_risco);
+		if (isNaN(risco)) continue;
+
+		const ausencia = parseFloat(100 - risco);
+		const cor = obterCorRisco(risco);
+		const textoFator = fator.charAt(10).toUpperCase() + fator.slice(11).toLowerCase();
+
+		garantirEspaco(pdf, alturaLinha); // Garante espaço para a linha
+		yLinha = pdf.y;
+
+		// Linhas da tabela
+		formatarLinhasTabela(pdf, textoFator, risco, ausencia, xFator, xRisco, xAusencia, yLinha, cor);
+		pdf.y += alturaLinha;
+	}
+	pdf.y += 10; // espaço após as informações do gráfico
 };
 function deletarImagens(caminhoImagem) {
 	// Aguarda o PDF processar a imagem antes de excluir

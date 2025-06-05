@@ -30,7 +30,7 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, 
 			});
 
 			let posicao = await adicionarGrafico(pdf, dadosFator);
-			await adicionaInformacoesDoGrafico(pdf, dadosFator, posicao);
+			await adicionaInformacoesDoGrafico(pdf, dadosFator);
 		}
 		pdf.end();
 		return caminhoArquivoPDF;

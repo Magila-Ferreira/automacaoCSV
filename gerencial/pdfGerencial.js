@@ -21,7 +21,7 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, 
 
 			// Adiciona o gráfico
 			let posicao = await adicionarGrafico(pdf, dados, null, tipoRelatorio);
-			await adicionaInformacoesDoGraficoGerencial(pdf, dados, posicao);
+			await adicionaInformacoesDoGraficoGerencial(pdf, dados);
 		}			
 		pdf.end();
 		return caminhoArquivoPDF;
@@ -41,6 +41,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 			definicao, cabecalho, introducao);
 
 		for (const setor in dadosSetores) {
+			pdf.x = 30;
 			pdf.addPage();
 			formatarDescricaoArquivo(pdf, descricaoDoArquivo);
 			formatarTextoSetor(pdf, `Setor de trabalho:                        ${setor.toUpperCase()}`);
@@ -51,7 +52,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 				let posicao = posicaoAtualPDF(pdf);	// Posição atual do PDF
 				const fatores = dadosSetores[setor][escala];
 				posicao = await adicionarGrafico(pdf, fatores, setor, tipoRelatorio);
-				await adicionaInformacoesDoGraficoGerencial(pdf, fatores, posicao);
+				await adicionaInformacoesDoGraficoGerencial(pdf, fatores);
 				espacamentoVertical(pdf, 1);
 			}
 		}

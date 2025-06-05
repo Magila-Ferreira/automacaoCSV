@@ -1,7 +1,7 @@
 import fs from "fs";
 import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF, consultarSetores } from "../model/consultasBanco.js";
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
-import { pdfDaEmpresa, pdfPorSetor } from "./pdfGerencialEmpresa.js";
+import { pdfDaEmpresa, pdfPorSetor } from "./pdfGerencial.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
 import { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor } from "../normatizacao/dadosGerenciais.js";
 import { salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor } from "../model/operacoesBanco.js";
@@ -200,7 +200,7 @@ function calcularRiscoPorSetor(dadosPorQuestaoComSetor) {
 	}
 	return dadosPorSetorEFator;
 }
-// Função utilitária para calcular o risco
+// Calcular o risco
 function calcularRisco(dadosFator) {
 	const riscoPorFator = {};
 
@@ -225,7 +225,7 @@ function calcularRisco(dadosFator) {
 	// Cálculo do risco: divide-se a somaPonderacaoDeRisco [pesos 5, 4 e 3] pela soma total das ponderações * 100
 	const risco = somaPonderacaoComRisco / totalPonderado * 100 || 0;
 
-	return Number(risco.toFixed(2));
+	return Number(risco.toFixed(1));
 }
 const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 	const tipoRelatorio = "GRAU DE RISCO PONDERADO"; // Mudança do nome afeta a função de gerar grafico
