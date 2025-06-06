@@ -82,9 +82,9 @@ const inicializarPrograma = () => {
 			console.log("ARQUIVO PROCESSADO!\n");
 
 			await salvarRegistrosNoBanco(dadosTratados, nomeDoBanco, identificacaoCols, colunasDasRespostasExcel);
-			//await disponibilizarPDF(nomeDoBanco, pastaSaida, nomeDaEmpresa);
+			await disponibilizarPDF(nomeDoBanco, pastaSaida, nomeDaEmpresa);
 			await disponibilizarPDFGerencial(nomeDoBanco, pastaSaida, nomeDaEmpresa);
-			//await alertarFimDoProcesso(); // FIM
+			await alertarFimDoProcesso(); // FIM
 		} catch (err) {
 			console.error(`${err}\n`);
 		}	
