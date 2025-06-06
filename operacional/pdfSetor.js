@@ -6,7 +6,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 		const { pdf, caminhoArquivoPDF } = criarPDF(pastaDestino, nomeArquivo, tipoRelatorio);
 		const titulo = 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS';
 		const definicao = 'Relatório por setor';
-		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
+		const cabecalho = 'Empresa / Unidade Fabril:     ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
 		const descricaoDoArquivo = "GRÁFICOS DO SETOR - Porcentagem de RESPOSTAS por categoria.";
 
 		formatarPrimeiraPagina(pdf, titulo,
@@ -15,7 +15,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 		for (const setor in dadosSetores) {
 			pdf.addPage();
 			formatarDescricaoArquivo(pdf, descricaoDoArquivo);
-			formatarTextoSetor(pdf, `Setor de trabalho:                        ${setor.toUpperCase()}`);
+			formatarTextoSetor(pdf, `Setor de trabalho: ${setor.toUpperCase()}`);
 
 			if (dadosSetores.length === 0) continue; // Verifica se o setor possui dados
 

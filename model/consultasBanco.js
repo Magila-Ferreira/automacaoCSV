@@ -1,5 +1,6 @@
 import { gerenciadorDeConexoesBD } from "../config/configBanco.js";
 import { USUARIO_BD } from "../config/configBanco.js";
+import { normalizarTexto } from '../normatizacao/dadosGerenciais.js';
 
 // Recuperar os registros do banco
 const recuperarDadosDoBanco = async (nomeDoBanco, USUARIO_BD) => {
@@ -165,13 +166,14 @@ const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = n
 	try {
 		if (Array.isArray(setores)) {
 			for (const setor of setores) {
-				const [retorno_sql] = await db.query(instrucao_sql, [setor]);
+				const [retorno_sql] = await db.query(instrucao_sql, [normalizarTexto(setor)
+]);
 				const dados = retorno_sql.map(linha => ({
 					questao: linha.questao,
 					resposta: linha.resposta,
 					quantidade: linha.quantidade,
 					fator: linha.fator,
-					setor: linha.setor || setor,					
+					setor: normalizarTexto(linha.setor) || normalizarTexto(setor),					
 				}));
 				resultados.push(...dados); // Concatena os resultados
 			}

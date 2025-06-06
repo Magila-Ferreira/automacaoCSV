@@ -1,6 +1,7 @@
 import { escalas, fatores, questoes } from '../conteudoEstatico/insertsEstaticos.js';
 import { gerenciadorDeConexoesBD } from '../config/configBanco.js';
 import { filtrarRegistrosNovos, filtrarRegistrosGerenciaisNovos, filtrarRegistrosGerenciaisNovosSetor, recuperarDadosDoBanco, recuperarDadosGerenciaisDoSetor, recuperarDadosGerenciaisDaEmpresa } from './consultasBanco.js';
+import { normalizarTexto } from '../normatizacao/dadosGerenciais.js';
 
 import { NOME_BANCO_CONTROLE } from '../config/configBanco.js';
 import { USUARIO_BD } from '../config/configBanco.js';
@@ -153,7 +154,7 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 
 		// Insere os dados na tabela identificação e questao_resposta
 		for (const item of dados) {
-			const valores_identificacao = [parseInt(item.id, 10), item.setor, item.cargo, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];
+			const valores_identificacao = [parseInt(item.id, 10), normalizarTexto(item.setor), item.cargo, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];
 
 			// Insere na tabela 'identificação' caso não exista
 			const [result] = await db.query(inserir_identificacao, valores_identificacao);
@@ -244,7 +245,7 @@ const salvarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 	try {
 		for (const item of dados) {
-			const valores = [item.porcentagem_risco, item.setor, item.fator];
+			const valores = [item.porcentagem_risco, normalizarTexto(item.setor), item.fator];
 			await db.query(instrucao_sql, valores);
 		}
 	} catch (error) {

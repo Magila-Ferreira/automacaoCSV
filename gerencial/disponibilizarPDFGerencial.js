@@ -3,7 +3,7 @@ import { selecionarDadosGerenciais, selecionarDadosGerenciaisPDF, consultarSetor
 import { pesos } from "../conteudoEstatico/insertsEstaticos.js";
 import { pdfDaEmpresa, pdfPorSetor } from "./pdfGerencial.js";
 import { introducaoGerencial } from "../conteudoEstatico/introducaoPDF.js";
-import { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor } from "../normatizacao/dadosGerenciais.js";
+import { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor, normalizarTexto } from "../normatizacao/dadosGerenciais.js";
 import { salvarRegistrosGerenciais, salvarRegistrosGerenciaisSetor } from "../model/operacoesBanco.js";
 import { pdfAberto } from "../pdf/verificaStatusPdf.js";
 
@@ -73,7 +73,7 @@ async function acrescentaPesosEPonderacao(dadosGerenciais) {
 		}
 
 		agrupamentoPorQuestao[idQuestao].respostas.push({
-			setor: item.setor,
+			setor: normalizarTexto(item.setor),
 			escala: item.escala,
 			id_fator: item.id_fator,
 			resposta: item.resposta,
@@ -178,7 +178,7 @@ function calcularRiscoPorSetor(dadosPorQuestaoComSetor) {
 			// Adiciona as respostas ao fator, incluindo setor e número da questão
 			const respostasComSetor = respostas.map(resposta => ({
 				...resposta,
-				setor: setor,
+				setor: normalizarTexto(setor),
 				questao: Number(questaoId)
 			}));
 
@@ -233,10 +233,11 @@ const disponibilizarPDFGerencial = async (nomeDoBanco, pastaSaida, nomeDaEmpresa
 		// Selecionar os setores
 		const setores = await consultarSetores(nomeDoBanco, selecionar_setores); // Objeto com chave
 		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
+		const setoresNormalizados = setoresDaEmpresa.map(setor => normalizarTexto(setor)); // Setores em caixa baixa
 
 		// Selecionar dados organizados por id_questao
 		let dadosGerenciaisEmpresa = await selecionarDadosGerenciais(nomeDoBanco, respostasPorQuestao);
-		let dadosGerenciaisSetor = await selecionarDadosGerenciais(nomeDoBanco, respostaPorQuestaoSetor, setoresDaEmpresa);
+		let dadosGerenciaisSetor = await selecionarDadosGerenciais(nomeDoBanco, respostaPorQuestaoSetor, setoresNormalizados);
 
 		// Cálculo do risco por fator
 		dadosGerenciaisEmpresa = await acrescentaPesosEPonderacao(dadosGerenciaisEmpresa); // Calcula ponderação

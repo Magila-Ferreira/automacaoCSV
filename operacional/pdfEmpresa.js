@@ -6,7 +6,7 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, 
 		const { pdf, caminhoArquivoPDF } = criarPDF(pastaDestino, nomeArquivo, tipoRelatorio);
 		const titulo = 'RESULTADO DA ANÁLISE PRELIMINAR DE RISCOS PSICOSSOCIAIS';
 		const definicao = 'Relatório da Empresa';
-		const cabecalho = 'Empresa / Unidade Fabril:          ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
+		const cabecalho = 'Empresa / Unidade Fabril:     ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
 		const descricaoDoArquivo = "GRÁFICOS DA EMPRESA - Porcentagem de RESPOSTAS por categoria.";
 
 		formatarPrimeiraPagina(pdf, titulo,

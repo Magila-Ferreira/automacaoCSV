@@ -19,7 +19,6 @@ const higienizaNomeDoBancoEPDF = (filePath) => {
 
 	return { nomeDoBanco, nome };
 };
-
 // Verifica se o arquivo é válido:
 const isArquivoValido = (filePath) => {
 	return (
@@ -27,7 +26,6 @@ const isArquivoValido = (filePath) => {
 		&& (filePath.endsWith('.csv') || filePath.endsWith('.xlsx')) // Se for csv ou xlsx
 	);
 };
-
 // Recuperar os dados do banco e gerar o PDF
 async function gerarPdfComOsDadosSalvosNoBanco(nomeDoBancoARecuperar, pastaSaida, nomeDaEmpresaARecuperar) {
 	try {
@@ -49,7 +47,6 @@ async function gerarPdfComOsDadosSalvosNoBanco(nomeDoBancoARecuperar, pastaSaida
 		console.error(`Erro ao gerar PDF com os dados RECUPERADOS do banco: ${error.message}`);
 	}
 }
-
 const inicializarPrograma = () => {
 	const pastaEntrada = path.resolve(process.cwd(), '..', 'arquivosPgr', 'excel_csv');
 	const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
@@ -85,9 +82,9 @@ const inicializarPrograma = () => {
 			console.log("ARQUIVO PROCESSADO!\n");
 
 			await salvarRegistrosNoBanco(dadosTratados, nomeDoBanco, identificacaoCols, colunasDasRespostasExcel);
-			await disponibilizarPDF(nomeDoBanco, pastaSaida, nomeDaEmpresa);
+			//await disponibilizarPDF(nomeDoBanco, pastaSaida, nomeDaEmpresa);
 			await disponibilizarPDFGerencial(nomeDoBanco, pastaSaida, nomeDaEmpresa);
-			await alertarFimDoProcesso(); // FIM
+			//await alertarFimDoProcesso(); // FIM
 		} catch (err) {
 			console.error(`${err}\n`);
 		}	

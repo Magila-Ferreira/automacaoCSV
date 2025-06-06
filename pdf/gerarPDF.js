@@ -71,7 +71,7 @@ const adicionaInformacoesDoGraficoGerencial = async (pdf, dados) => {
 
 	// Garante espaço e espaçamentos para a tabela
 	pdf.y += 10;
-	garantirEspaco(pdf, 100); 
+	garantirEspaco(pdf, 100);
 	
 	// Título da seção
 	formatarTextoSubTitulo(pdf, "INFORMAÇÕES DO GRÁFICO: ");

@@ -39,7 +39,7 @@ function normalizarDadosSetor(dadosGerenciaisSetor) {
 				continue;
 			}
 			dadosNormalizados.push({
-				setor: setor,
+				setor: normalizarTexto(setor),
 				fator: parseInt(idFator, 10),
 				risco: parseFloat(conteudo.risco).toFixed(2)
 			});
@@ -59,7 +59,7 @@ async function agruparDadosPorSetor(dadosGerenciaisSetor) {
 
 		// Percorre todas as respostas da questão atual
 		respostas.forEach(resposta => {
-			const setor = resposta.setor; // Obtém o nome do setor associado à resposta
+			const setor = normalizarTexto(resposta.setor); // Obtém o nome do setor associado à resposta
 
 			// Cria o objeto do agrupamento por setor, se ainda não existir
 			if (!agrupadoPorSetor[setor]) {
@@ -102,5 +102,8 @@ async function estruturaDadosPorSetor(dadosPorFator) {
 		});
 	}
 	return estrutura;
-}
-export { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor };
+};
+function normalizarTexto(texto) {
+	return typeof texto === 'string' ? texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() : texto;
+};
+export { normalizarDadosEmpresa, normalizarDadosSetor, agruparDadosPorSetor, estruturaDadosPorSetor, normalizarTexto };
