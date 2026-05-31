@@ -62,10 +62,12 @@ const processarExcel = (filePath) => {
 // Limpar conteúdo do objeto dadosArquivo
 const formatarChave = (chave) => {
 	return chave
-		.trim()                      // Remove espaços extras no início e fim
-		.toLowerCase()               // Converte para minúsculas
-		.replace(/[:]/g, '')         // Remove ":" caso exista
-		.replace(/\s+/g, '_');       // Substitui espaços por "_"
+		.trim()                      		// Remove espaços extras no início e fim
+		.toLowerCase()               		// Converte para minúsculas
+		.normalize('NFD')               	// Separa as letras de seus acentos
+		.replace(/[\u0300-\u036f]/g, '')    // Remove todos os acentos
+		.replace(/[:]/g, '')         		// Remove ":" caso exista
+		.replace(/\s+/g, '_');       		// Substitui espaços por "_"
 };
 
 const limparDados = (dados) => {
@@ -74,7 +76,7 @@ const limparDados = (dados) => {
 
 		Object.keys(item).forEach(chave => {
 			const novaChave = formatarChave(chave);  // Renomeia a chave
-
+			
 			let valor = item[chave];
 
 			// Tratamento dos valores do arquivo
@@ -99,16 +101,16 @@ function selecionarColunasEFormatarDados(dadosLimpos) {
 		// Renomear chaves
 		let dadosSelecionados = {
 			id: dadoLimpo.id,
-			setor: dadoLimpo.setor_de_trabalho,
-			cargo: dadoLimpo.cargo_atual,
+			termo: dadoLimpo.pergunta,
+			area_setor: dadoLimpo.indique_abaixo_a_sua_area_associada_ao_setor_de_trabalho,
 			idade: dadoLimpo.idade,
 			escolaridade: dadoLimpo.escolaridade,
 			estadoCivil: dadoLimpo.estado_civil,
-			genero: dadoLimpo['como_você_se_identifica'],
+			genero: dadoLimpo['como_voce_se_identifica'],
 		};
 		// Renomeando as perguntas para q1, q2, ..., q46
 		const chavesOriginais = Object.keys(dadoLimpo); // Obtém o nome das chaves do objeto dadosLimpos
-		const indiceInicialChaves = chavesOriginais.indexOf('como_você_se_identifica') + 1; // Obtém a posição de q1
+		const indiceInicialChaves = chavesOriginais.indexOf('como_voce_se_identifica') + 1; // Obtém a posição de q1
 
 		// Percorre as chaves e adiciona ao novo objeto, renomeando-as
 		chavesOriginais.slice(indiceInicialChaves).forEach((chave, index) => {

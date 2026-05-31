@@ -4,7 +4,7 @@ import { normalizarTexto } from '../normatizacao/dadosGerenciais.js';
 
 // Recuperar os registros do banco
 const recuperarDadosDoBanco = async (nomeDoBanco, USUARIO_BD) => {
-	const seleciona_dados_identificacao = `SELECT id, setor, cargo, idade, escolaridade, estadoCivil, genero FROM identificacao ORDER BY id ASC;`;
+	const seleciona_dados_identificacao = `SELECT id, area_setor, idade, escolaridade, estadoCivil, genero FROM identificacao ORDER BY id ASC;`;
 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD); // Conectar ao banco
 	try {
@@ -14,8 +14,7 @@ const recuperarDadosDoBanco = async (nomeDoBanco, USUARIO_BD) => {
 
 		return retorno_sql.map((linha_retorno_sql) => ({
 			id: parseInt(linha_retorno_sql.id, 10),
-			setor: linha_retorno_sql.setor?.trim(),
-			cargo: linha_retorno_sql.cargo?.trim(),
+			area_setor: linha_retorno_sql.area_setor?.trim(),
 			idade: parseInt(linha_retorno_sql.idade, 10),
 			escolaridade: linha_retorno_sql.escolaridade?.trim(),
 			estadoCivil: linha_retorno_sql.estadoCivil?.trim(),
@@ -36,6 +35,7 @@ const recuperarDadosGerenciaisDaEmpresa = async (nomeDoBanco, USUARIO_BD, instru
 	try {
 		// Retorna os registros do banco, se houver
 		const [registrosBanco] = await db.query(instrucao_sql);
+		
 		if (!registrosBanco || registrosBanco.length === 0) return [];
 
 		return registrosBanco.map((registro) => ({
@@ -57,10 +57,11 @@ const recuperarDadosGerenciaisDoSetor = async (nomeDoBanco, USUARIO_BD, instruca
 	try {
 		// Retorna os registros do banco, se houver
 		const [registrosBanco] = await db.query(instrucao_sql);
+
 		if (!registrosBanco || registrosBanco.length === 0) return [];
 
 		return registrosBanco.map((registro) => ({
-			setor: registro.setor,
+			area_setor: registro.area_setor,
 			id_fator: parseInt(registro.id_fator, 10),
 			porcentagem_risco: parseFloat(registro.porcentagem_risco),
 		}));
@@ -83,13 +84,12 @@ const filtrarRegistrosNovos = (dadosArquivo, dadosBanco) => {
 		if (!item.id) return false; // Ignora itens sem id
 
 		// Ignora registros se todos os campos de identificacao forem "NÃO INFORMADO"
-		const camposNaoInformados = [item.setor, item.cargo, item.escolaridade, item.estadoCivil, item.genero];
+		const camposNaoInformados = [item.area_setor, item.escolaridade, item.estadoCivil, item.genero];
 		const todosCamposNaoInformados = camposNaoInformados.every(campo => campo === "NÃO INFORMADO");
 		if (todosCamposNaoInformados) return false; 
 
 		const id = parseInt(item.id, 10);
 		if (isNaN(id)) return false;
-		
 		return !idBanco.has(id);
 	});
 	return novosRegistros;
@@ -113,14 +113,14 @@ const filtrarRegistrosGerenciaisNovos = (dadosArquivo, dadosBanco) => {
 const filtrarRegistrosGerenciaisNovosSetor = (dadosArquivo, dadosBanco) => {
 	// Mapeia os dados, renomeia a chave 'risco' e converte os tipos de dados 
 	const arrayDadosArquivo = dadosArquivo.map((info) => ({
-		setor: info.setor,
+		area_setor: info.area_setor,
 		fator: parseInt(info.fator, 10),
 		porcentagem_risco: parseFloat(info.risco),
 	}));
 
 	// Retorna os registros diferentes do banco
 	const diferentes = arrayDadosArquivo.filter(item => {
-		const registroBanco = dadosBanco.find(registro => registro.id_fator === item.fator && registro.setor === item.setor);
+		const registroBanco = dadosBanco.find(registro => registro.id_fator === item.fator && registro.area_setor === item.area_setor);
 		return !registroBanco || registroBanco.porcentagem_risco !== item.porcentagem_risco;
 	});
 	return diferentes;
@@ -128,17 +128,17 @@ const filtrarRegistrosGerenciaisNovosSetor = (dadosArquivo, dadosBanco) => {
 // Selecionar setores
 const consultarSetores = async (nomeDoBanco, instrucao_sql) => { 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
-	const [setores] = await db.query(instrucao_sql);
-	return setores;
+	const [areas_setores] = await db.query(instrucao_sql);
+	return areas_setores;
 };
 // Selecionar os dados do banco para o PDF
-const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
+const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, area_setor = null) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	let resultados = {};
 	try {
 		for (let fator = 1; fator <= 10; fator++) {
-			let parametros = setor ? [fator, setor] : [fator]; // Adicionar setor aos parâmetros
+			let parametros = area_setor ? [fator, area_setor] : [fator]; // Adicionar area_setor aos parâmetros
 			const [retorno_sql] = await db.query(instrucao_sql, parametros);
 
 			resultados[`fator_${fator}`] = retorno_sql.map(linha_retorno_sql => ({
@@ -146,7 +146,7 @@ const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
 				fator: linha_retorno_sql.fator,
 				resposta: linha_retorno_sql.resposta,
 				quantidade: linha_retorno_sql.quantidade,
-				setor: linha_retorno_sql.setor || setor,
+				area_setor: linha_retorno_sql.area_setor || area_setor,
 			}));
 		};
 		return resultados;
@@ -159,21 +159,20 @@ const selecionarDadosPDF = async (nomeDoBanco, instrucao_sql, setor = null) => {
 	}
 };
 // Selecionar dados GERENCIAIS para salvar no Banco
-const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = null) => {
+const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, areas_setores = null) => {
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 	let resultados = [];
 
 	try {
-		if (Array.isArray(setores)) {
-			for (const setor of setores) {
-				const [retorno_sql] = await db.query(instrucao_sql, [normalizarTexto(setor)
-]);
+		if (Array.isArray(areas_setores)) {
+			for (const area_setor of areas_setores) {
+				const [retorno_sql] = await db.query(instrucao_sql, [normalizarTexto(area_setor)]);
 				const dados = retorno_sql.map(linha => ({
 					questao: linha.questao,
 					resposta: linha.resposta,
 					quantidade: linha.quantidade,
 					fator: linha.fator,
-					setor: normalizarTexto(linha.setor) || normalizarTexto(setor),					
+					area_setor: normalizarTexto(linha.area_setor) || normalizarTexto(area_setor),					
 				}));
 				resultados.push(...dados); // Concatena os resultados
 			}
@@ -196,11 +195,11 @@ const selecionarDadosGerenciais = async (nomeDoBanco, instrucao_sql, setores = n
 	}
 };
 // Selecionar dados GERENCIAIS para o PDF
-const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = null) => { 
+const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, area_setor = null) => { 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 
 	// Caso a instrução seja para obter os setores, retorna-os
-	if (instrucao_sql.trim().toLowerCase().startsWith("select distinct setor")) {
+	if (instrucao_sql.trim().toLowerCase().startsWith("select distinct area_setor")) {
 		const [setores] = await db.query(instrucao_sql);
 		return setores;
 	}
@@ -212,7 +211,7 @@ const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = 
 		
 		// Transforma o resultado em um objeto agrupado por nome do fator
 		resultados = linhas.reduce((objeto, linha) => {
-			const { setor, fator, escala, porcentagem_risco, id_fator } = linha;
+			const { area_setor, fator, escala, porcentagem_risco, id_fator } = linha;
 			const chaveEscala = linha.escala; 
 
 			// Cria um array por nome do fator, se ainda não existir
@@ -222,7 +221,7 @@ const selecionarDadosGerenciaisPDF = async (nomeDoBanco, instrucao_sql, setor = 
 
 			// Adiciona os dados do risco nesse fator
 			objeto[chaveEscala].push({
-				setor,
+				area_setor,
 				fator,
 				escala,
 				porcentagem_risco,

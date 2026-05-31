@@ -52,7 +52,7 @@ const inicializarPrograma = () => {
 	const pastaSaida = path.resolve(process.cwd(), '..', 'arquivosPgr', 'pdf');
 
 	// Define o nome das colunas no banco - tabela 'identificacao'
-	const identificacaoCols = ['id', 'setor', 'cargo', 'idade', 'escolaridade', 'estadoCivil', 'genero']; 
+	const identificacaoCols = ['id', 'termo', 'area_setor', 'idade', 'escolaridade', 'estadoCivil', 'genero']; 
 	
 	// Cria um array com o nome das colunas do arquivo excel, para os dados que serão salvos na tabela 'questao_resposta'
 	const colunasDasRespostasExcel = Array.from({ length: 46 }, (_, i) => `q${i + 1}`); 
@@ -61,7 +61,7 @@ const inicializarPrograma = () => {
 	console.log("PROGRAMA INICIADO COM SUCESSO!!!");
 
 	chokidar.watch(pastaEntrada, { persistent: true, ignored: /(^|[/\\])~\$.*/ }).on('add', async (filePath) => {
-		const nomes = higienizaNomeDoBancoEPDF(filePath); // Define o nome do banco (nome do arquivo ou nome padro)
+		const nomes = higienizaNomeDoBancoEPDF(filePath); // Define o nome do banco (nome do arquivo ou nome padrão)
 		const nomeDoBanco = nomes.nomeDoBanco;
 		const nomeDaEmpresa = nomes.nome;
 
@@ -92,4 +92,3 @@ const inicializarPrograma = () => {
 	console.log("\n-----------------------------------------------------------------------------------------------\n");
 };
 export { inicializarPrograma };
-

@@ -4,6 +4,8 @@ import { Service } from 'node-windows';
 const svc = new Service({
 	name: "AutomacaoNodeJS", // Nome do serviço no Windows
 	description: "Processamento de arquivos excel e geração de gráficos em PDF",
+
+	//	"C:\\amb_sw\\automacao\\index.js" 			---> 			Caminho do script usado na instalação do Guilherme
 	script: "E:\\DEV_2025\\automacao\\index.js", // Caminho do seu script principal
 	nodeOptions: [
 		"--harmony",

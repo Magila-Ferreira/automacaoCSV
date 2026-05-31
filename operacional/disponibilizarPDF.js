@@ -16,7 +16,7 @@ const respostas_empresa = `
 			WHERE q.id_fator = ?
 			GROUP BY qr.resposta;`;
 /* ----------> Contabiliza as respostas do setor, por fator <---------- */
-const selecionar_setores = `SELECT DISTINCT setor FROM identificacao ORDER BY setor;`;
+const selecionar_setores = `SELECT DISTINCT area_setor FROM identificacao ORDER BY area_setor;`;
 const respostas_setor = `
 			SELECT e.nome AS escala, f.nome AS fator, qr.resposta, COUNT(*) AS quantidade
 			FROM questao_resposta qr
@@ -25,7 +25,7 @@ const respostas_setor = `
 			JOIN escala e ON f.id_escala = e.id
 			JOIN identificacao i ON qr.id_identificacao = i.id
 			WHERE q.id_fator = ?
-            AND i.setor = ?
+            AND i.area_setor = ?
 			GROUP BY qr.resposta;`;
 
 const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
@@ -35,28 +35,28 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 		const dadosPDF = await selecionarDadosPDF(nomeDoBanco, respostas_empresa);
 
 		// Selecionar os setores
-		const setores = await consultarSetores(nomeDoBanco, selecionar_setores); // Objeto com chave
-		const setoresDaEmpresa = setores.map((item) => item.setor); // Objeto sem chave (só o conteúdo)
-
-		// Dados por cada setor
+		const areas_setores = await consultarSetores(nomeDoBanco, selecionar_setores); // Objeto com chave
+		const setoresDaEmpresa = areas_setores.map((item) => item.area_setor); // Objeto sem chave (só o conteúdo)
+		
+		// Dados por cada setor					
 		const dadosPDF_porSetor = {};
-		for (const setor of setoresDaEmpresa) {
-			dadosPDF_porSetor[setor] = await selecionarDadosPDF(nomeDoBanco, respostas_setor, setor);
+		for (const area_setor of setoresDaEmpresa) {
+			dadosPDF_porSetor[area_setor] = await selecionarDadosPDF(nomeDoBanco, respostas_setor, area_setor);
 		}
 
-		// Organizar os dados por setor 
-		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [setor, fatores]) => {
-			acumulador[setor] = {};
+		// Organizar os dados por setor 					-------> Continuar aqui <-------
+		const dadosOrganizadosPorSetor = Object.entries(dadosPDF_porSetor).reduce((acumulador, [area_setor, fatores]) => {
+			acumulador[area_setor] = {};
 
 			Object.values(fatores).forEach((respostas) => {
 				respostas.forEach(({ escala, fator, ...resto }) => {
 
 					// Iniciar a escala e o fator, caso não existam
-					acumulador[setor][escala] ??= {};
-					acumulador[setor][escala][fator] ??= [];
+					acumulador[area_setor][escala] ??= {};
+					acumulador[area_setor][escala][fator] ??= [];
 
 					// Adicionar a resposta ao fator correspondente
-					acumulador[setor][escala][fator].push({ escala, fator, ...resto });
+					acumulador[area_setor][escala][fator].push({ escala, fator, ...resto });
 				});
 			});
 			return acumulador;
@@ -84,9 +84,11 @@ const disponibilizarPDF = async (nomeDoBanco, pastaSaida, nomeDaEmpresa) => {
 			console.log(`Arquivo(s) PDF em uso. Feche-o(s) para continuar...`);
 			await new Promise(resolve => setTimeout(resolve, 10000)); // Espera 10 segundos
 		} 
+		
 		// Gerar os PDF's da Empresa e por Setor
 		await pdfDaEmpresa(dadosPDF, pastaSaida, `${nomeDaEmpresa}_Empresa`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
 		console.log(`PDF da Empresa (% de respostas) --> gerado e salvo com sucesso!\n`);
+		
 		await pdfPorSetor(dadosOrganizadosPorSetor, pastaSaida, `${nomeDaEmpresa}_Setores`, tipoRelatorio, introducaoOperacional, nomeDaEmpresa);
 		console.log(`PDF por Setor (% de respostas) --> gerado e salvo com sucesso!\n`);
 	} catch (error) {

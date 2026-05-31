@@ -10,16 +10,16 @@ const fatores = {
     fator1: {nome: "FATOR 1 - Divisão das tarefas", id_escala: 1},
     fator2: {nome: "FATOR 2 - Divisão social do trabalho", id_escala: 1},
     /* ESCALA 2 */
-    fator3: {nome: "FATOR 1 - Estilo individualista", id_escala: 2},
-    fator4: {nome: "FATOR 2 - Estilo coletivista", id_escala: 2},
+    fator3: {nome: "FATOR 3 - Estilo individualista", id_escala: 2},
+    fator4: {nome: "FATOR 4 - Estilo coletivista", id_escala: 2},
     /* ESCALA 3 */
-    fator5: {nome: "FATOR 1 - Falta de sentido no trabalho", id_escala: 3},
-    fator6: {nome: "FATOR 2 - Esgotamento mental", id_escala: 3},
-    fator7: {nome: "FATOR 3 - Falta de reconhecimento", id_escala: 3},
+    fator5: {nome: "FATOR 5 - Falta de sentido no trabalho", id_escala: 3},
+    fator6: {nome: "FATOR 6 - Esgotamento mental", id_escala: 3},
+    fator7: {nome: "FATOR 7 - Falta de reconhecimento", id_escala: 3},
     /* ESCALA 4 */
-    fator8: {nome: "FATOR 1 - Danos psicologicos", id_escala: 4},
-    fator9: {nome: "FATOR 2 - Danos sociais", id_escala: 4},
-    fator10:{nome: "FATOR 3 - Danos fisicos", id_escala: 4},
+    fator8: {nome: "FATOR 8 - Danos psicologicos", id_escala: 4},
+    fator9: {nome: "FATOR 9 - Danos sociais", id_escala: 4},
+    fator10:{nome: "FATOR 10 - Danos fisicos", id_escala: 4},
 };
 
 const questoes = {

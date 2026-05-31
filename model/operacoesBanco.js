@@ -68,8 +68,8 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 	const definirTipoColunaIdentificacao = (col) => {
 		const tipos = {
 			id: "INT PRIMARY KEY",
-			setor: "VARCHAR(100) NOT NULL",
-			cargo: "VARCHAR(100) NOT NULL",
+			termo: "VARCHAR(50) NOT NULL",
+			area_setor: "VARCHAR(255) NOT NULL",
 			escolaridade: "VARCHAR(100) NOT NULL",
 			estadoCivil: "VARCHAR(100) NOT NULL",
 			genero: "VARCHAR(100) NOT NULL",
@@ -100,7 +100,7 @@ const definirTabelas = async (nomeDoBanco, identificacaoCols) => {
 	const criar_tabela_risco_setor_fator = `CREATE TABLE IF NOT EXISTS risco_setor_fator (
 		id INT AUTO_INCREMENT PRIMARY KEY,
 		porcentagem_risco FLOAT NOT NULL,
-		setor VARCHAR(100) NOT NULL,
+		area_setor VARCHAR(255) NOT NULL,
 		id_fator INT NOT NULL,
 		FOREIGN KEY (id_fator) REFERENCES fator(id));`;
 
@@ -127,7 +127,7 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 	const inserir_questao = `INSERT IGNORE INTO questao (afirmacao, id_fator) VALUES (?, ?)`;
 
 	const inserir_identificacao = `INSERT IGNORE INTO identificacao 
-        (id, setor, cargo, idade, escolaridade, estadoCivil, genero) 
+        (id, termo, area_setor, idade, escolaridade, estadoCivil, genero) 
         VALUES (?, ?, ?, ?, ?, ?, ?)`;
 	
 	const inserir_questao_resposta = `INSERT IGNORE INTO questao_resposta 
@@ -154,7 +154,7 @@ const salvarDados = async (dados, nomeDoBanco, colunasDasRespostasExcel) => {
 
 		// Insere os dados na tabela identificação e questao_resposta
 		for (const item of dados) {
-			const valores_identificacao = [parseInt(item.id, 10), normalizarTexto(item.setor), item.cargo, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];
+			const valores_identificacao = [parseInt(item.id, 10), normalizarTexto(item.termo), item.area_setor, parseInt(item.idade, 10), item.escolaridade, item.estadoCivil, item.genero];
 
 			// Insere na tabela 'identificação' caso não exista
 			const [result] = await db.query(inserir_identificacao, valores_identificacao);
@@ -245,7 +245,7 @@ const salvarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) => 
 	const db = gerenciadorDeConexoesBD(nomeDoBanco, USUARIO_BD);
 	try {
 		for (const item of dados) {
-			const valores = [item.porcentagem_risco, normalizarTexto(item.setor), item.fator];
+			const valores = [item.porcentagem_risco, normalizarTexto(item.area_setor), item.fator];
 			await db.query(instrucao_sql, valores);
 		}
 	} catch (error) {
@@ -274,16 +274,15 @@ const atualizarDadosGerenciaisSetor = async (dados, nomeDoBanco, instrucao_sql) 
 
 	try {
 		for (const valores of dados) {
-			// valores = [porcentagem_risco, setor, fator]
-			const [porcentagem_risco, setor, fator] = valores;
+			const [porcentagem_risco, area_setor, fator] = valores;
 
 			if (
 				typeof fator === 'number' &&
-				typeof setor === 'string' &&
+				typeof area_setor === 'string' &&
 				typeof porcentagem_risco === 'number'
 			) {
 				await db.query(instrucao_sql, valores);
-				console.log(`Atualizado: Setor: ${setor}, Fator: ${fator}, Risco: ${porcentagem_risco}`);
+				console.log(`Atualizado: Area_Setor: ${area_setor}, Fator: ${fator}, Risco: ${porcentagem_risco}`);
 			}
 		}
 	} catch (error) {
@@ -308,6 +307,7 @@ const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => {
 		const inserir_risco_fator = `INSERT IGNORE INTO risco_fator(porcentagem_risco, id_fator) VALUES (?, ?)`;
 		await salvarDadosGerenciais(registrosDiferentesEmpresa, nomeDoBanco, inserir_risco_fator);
 		return true;
+
 	} else if (registrosDiferentesEmpresa.length > 0) {
 		const atualizar_risco_fator = `UPDATE risco_fator SET porcentagem_risco = ? WHERE id_fator = ?`;
 		await atualizarDadosGerenciais(registrosDiferentesEmpresa, nomeDoBanco, atualizar_risco_fator);
@@ -318,33 +318,33 @@ const salvarRegistrosGerenciais = async (dadosTratadosEmpresa, nomeDoBanco) => {
 	}
 };
 const salvarRegistrosGerenciaisSetor = async (dadosTratadosSetor, nomeDoBanco) => {
-	const sql_risco_setor_fator = `SELECT setor, id_fator, porcentagem_risco FROM risco_setor_fator;`;
+	const sql_risco_setor_fator = `SELECT area_setor, id_fator, porcentagem_risco FROM risco_setor_fator;`;
 
 	// 1. Recupera os dados do banco: risco_setor_fator
 	const dadosBancoSetor = await recuperarDadosGerenciaisDoSetor(nomeDoBanco, USUARIO_BD, sql_risco_setor_fator);
-
+	
 	// 2. Compara os dados do arquivo com o banco: risco_setor_fator
 	const registrosDiferentesSetor = filtrarRegistrosGerenciaisNovosSetor(dadosTratadosSetor, dadosBancoSetor);
 
 	// 3. Verifica se há novos registros para salvar ou atualizar: em risco_setor_fator
 	if (dadosBancoSetor.length === 0) {
-		const inserir_risco_setor_fator = `INSERT IGNORE INTO risco_setor_fator(porcentagem_risco, setor, id_fator) VALUES (?, ?, ?)`;
+		const inserir_risco_setor_fator = `INSERT IGNORE INTO risco_setor_fator(porcentagem_risco, area_setor, id_fator) VALUES (?, ?, ?)`;
 		await salvarDadosGerenciaisSetor(registrosDiferentesSetor, nomeDoBanco, inserir_risco_setor_fator);
 		return true;
 
 	} else if (registrosDiferentesSetor.length > 0) {
-		const atualizar_risco_setor_fator = `UPDATE risco_setor_fator SET porcentagem_risco = ? WHERE setor = ? AND id_fator = ?`;
+		const atualizar_risco_setor_fator = `UPDATE risco_setor_fator SET porcentagem_risco = ? WHERE area_setor = ? AND id_fator = ?`;
 
 		// Validar os dados antes de executar o UPDATE
-		const atualizaveis = registrosDiferentesSetor.filter(({ setor, fator, porcentagem_risco }) =>
-			typeof setor === 'string' &&
+		const atualizaveis = registrosDiferentesSetor.filter(({ area_setor, fator, porcentagem_risco }) =>
+			typeof area_setor === 'string' &&
 			typeof fator === 'number' &&
 			typeof porcentagem_risco === 'number'
-		).map(({ setor, fator, porcentagem_risco }) => [porcentagem_risco, setor, fator]);
+		).map(({ area_setor, fator, porcentagem_risco }) => [porcentagem_risco, area_setor, fator]);
 		await atualizarDadosGerenciaisSetor(atualizaveis, nomeDoBanco, atualizar_risco_setor_fator);
 		return true;
 	} else {
-		//console.log(`Sem alterações necessárias na tabela risco_setor_fator BD: ${nomeDoBanco}.\n`);
+		console.log(`Sem alterações necessárias na tabela risco_setor_fator BD: ${nomeDoBanco}.\n`);
 		return false;
 	}
 };

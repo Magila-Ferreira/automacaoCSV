@@ -22,11 +22,11 @@ function normalizarDadosSetor(dadosGerenciaisSetor) {
 	}
 
 	// Desestrutura o objeto e percorre os setores
-	for (const [setor, fatores] of Object.entries(dadosGerenciaisSetor)) {
+	for (const [area_setor, fatores] of Object.entries(dadosGerenciaisSetor)) {
 
 		// Verifica se os fatores não estão vazios ou se não é um objeto
 		if (!fatores || typeof fatores !== 'object') {
-			console.warn(`Sem fatores válidos para o setor: ${setor}`);
+			console.warn(`Sem fatores válidos para o setor: ${area_setor}`);
 			continue;
 		}
 
@@ -35,11 +35,11 @@ function normalizarDadosSetor(dadosGerenciaisSetor) {
 
 			// Verifica se o conteúdo não está vazio ou se as respostas não são um array 
 			if (!conteudo || typeof conteudo.risco !== 'number') {
-				console.warn(`Sem risco válido para o setor: ${setor}, fator: ${idFator}`);
+				console.warn(`Sem risco válido para area_setor: ${area_setor}, fator: ${idFator}`);
 				continue;
 			}
 			dadosNormalizados.push({
-				setor: normalizarTexto(setor),
+				area_setor: normalizarTexto(area_setor),
 				fator: parseInt(idFator, 10),
 				risco: parseFloat(conteudo.risco).toFixed(2)
 			});
@@ -59,22 +59,21 @@ async function agruparDadosPorSetor(dadosGerenciaisSetor) {
 
 		// Percorre todas as respostas da questão atual
 		respostas.forEach(resposta => {
-			const setor = normalizarTexto(resposta.setor); // Obtém o nome do setor associado à resposta
+			const area_setor = normalizarTexto(resposta.area_setor); // Obtém o nome do setor associado à resposta
 
 			// Cria o objeto do agrupamento por setor, se ainda não existir
-			if (!agrupadoPorSetor[setor]) {
-				agrupadoPorSetor[setor] = {};
+			if (!agrupadoPorSetor[area_setor]) {
+				agrupadoPorSetor[area_setor] = {};
 			}
 
 			// Cria a questão dentro do setor se ainda não existir
-			if (!agrupadoPorSetor[setor][questaoId]) {
-				agrupadoPorSetor[setor][questaoId] = {
+			if (!agrupadoPorSetor[area_setor][questaoId]) {
+				agrupadoPorSetor[area_setor][questaoId] = {
 					fator, // Mantém o fator associado à questão
 					respostas: [], // Inicia um array para armazenar as respostas
 				};
 			}
-			agrupadoPorSetor[setor][questaoId].respostas.push(resposta); // Adiciona a resposta atual ao array de
-			// 																respostas do setor e questão correspondente
+			agrupadoPorSetor[area_setor][questaoId].respostas.push(resposta); // Adiciona a resposta atual ao array de respostas do setor e questão correspondente
 		});
 	}
 	return agrupadoPorSetor;
@@ -84,17 +83,17 @@ async function estruturaDadosPorSetor(dadosPorFator) {
 
 	const dados = Object.values(dadosPorFator).flat();
 
-	for (const { setor, escala, fator, porcentagem_risco, id_fator } of dados) {
-		if (!estrutura[setor]) {
-			estrutura[setor] = {};
+	for (const { area_setor, escala, fator, porcentagem_risco, id_fator } of dados) {
+		if (!estrutura[area_setor]) {
+			estrutura[area_setor] = {};
 		}
 
-		if (!estrutura[setor][escala]) {
-			estrutura[setor][escala] = []; // Deve ser um array!
+		if (!estrutura[area_setor][escala]) {
+			estrutura[area_setor][escala] = []; // Deve ser um array!
 		}
 		
-		estrutura[setor][escala].push({
-			setor,
+		estrutura[area_setor][escala].push({
+			area_setor,
 			escala,
 			fator,
 			id_fator,

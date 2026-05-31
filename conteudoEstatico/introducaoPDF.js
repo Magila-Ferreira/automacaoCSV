@@ -6,18 +6,18 @@ ESCALA 1 - Organização do trabalho
                     Fator 2. Divisão social do trabalho
 
 ESCALA 2 - Estilo de gestão
-                    Fator 1. Estilo individualista
-                    Fator 2. Estilo coletivista
+                    Fator 3. Estilo individualista
+                    Fator 4. Estilo coletivista
     
 ESCALA 3 - Indicadores de sofrimento no trabalho
-                    Fator 1. Falta de sentido no trabalho
-                    Fator 2. Esgotamento mental
-                    Fator 3. Falta de reconhecimento
+                    Fator 5. Falta de sentido no trabalho
+                    Fator 6. Esgotamento mental
+                    Fator 7. Falta de reconhecimento
 
 ESCALA 4 - Danos relacionados ao trabalho
-                    Fator 1. Danos psicológicos
-                    Fator 2. Danos sociais
-                    Fator 3. Danos físicos
+                    Fator 8. Danos psicológicos
+                    Fator 9. Danos sociais
+                    Fator 10. Danos físicos
 
 O gráfico representa a porcentagem de risco por fator, calculado da seguinte forma:
 

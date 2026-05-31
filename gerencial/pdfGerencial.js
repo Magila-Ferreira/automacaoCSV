@@ -11,7 +11,6 @@ const pdfDaEmpresa = async (dadosPDF, pastaDestino, nomeArquivo, tipoRelatorio, 
 		const descricaoDoArquivo = "GRÁFICO DA EMPRESA - Porcentagem ponderada de RISCO PSICOSSOCIAL por fator.";
 
 		formatarPrimeiraPagina(pdf, titulo, definicao, cabecalho, introducao);
-
 		formatarDescricaoArquivo(pdf, descricaoDoArquivo);
 
 		// Itera sobre a chave 'escala'
@@ -37,8 +36,7 @@ const pdfPorSetor = async (dadosSetores, pastaDestino, nomeArquivo, tipoRelatori
 		const cabecalho = 'Empresa / Unidade Fabril:     ' + nomeDaEmpresa.charAt(0).toUpperCase() + nomeDaEmpresa.slice(1).toLowerCase();
 		const descricaoDoArquivo = "GRÁFICOS DO SETOR - Porcentagem ponderada de RISCO PSICOSSOCIAL por setor e fator.";
 
-		formatarPrimeiraPagina(pdf, titulo,
-			definicao, cabecalho, introducao);
+		formatarPrimeiraPagina(pdf, titulo, definicao, cabecalho, introducao);
 
 		for (const setor in dadosSetores) {
 			pdf.x = 30;
